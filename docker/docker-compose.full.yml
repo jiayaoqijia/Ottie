@@ -1,0 +1,44 @@
+services:
+  # ─────────────────────────────────────────────
+  # Ottie Agent (one-shot query) - Full MCP Support
+  #   docker compose -f docker/docker-compose.full.yml run --rm ottie-agent -m "Hello"
+  # ─────────────────────────────────────────────
+  ottie-agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.full
+    container_name: ottie-agent-full
+    profiles:
+      - agent
+    volumes:
+      - ../config/config.json:/root/.ottie/config.json:ro
+      - ottie-workspace:/root/.ottie/workspace
+      - ottie-npm-cache:/root/.npm # npm cache for faster MCP server installs
+    entrypoint: ["ottie", "agent"]
+    stdin_open: true
+    tty: true
+
+  # ─────────────────────────────────────────────
+  # Ottie Gateway (Long-running Bot) - Full MCP Support
+  #   docker compose -f docker/docker-compose.full.yml --profile gateway up
+  # ─────────────────────────────────────────────
+  ottie-gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.full
+    container_name: ottie-gateway-full
+    restart: unless-stopped
+    profiles:
+      - gateway
+    volumes:
+      # Configuration file
+      - ../config/config.json:/root/.ottie/config.json:ro
+      # Persistent workspace (sessions, memory, logs)
+      - ottie-workspace:/root/.ottie/workspace
+      # NPM cache for faster MCP server installs
+      - ottie-npm-cache:/root/.npm
+    command: ["gateway"]
+
+volumes:
+  ottie-workspace:
+  ottie-npm-cache: # Cache npm packages to speed up MCP server installations

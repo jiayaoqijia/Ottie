@@ -1,0 +1,52 @@
+services:
+  # ─────────────────────────────────────────────
+  # Ottie Agent (one-shot query)
+  #   docker compose -f docker/docker-compose.yml run --rm ottie-agent -m "Hello"
+  # ─────────────────────────────────────────────
+  ottie-agent:
+    image: docker.io/sipeed/ottie:latest
+    container_name: ottie-agent
+    profiles:
+      - agent
+    # Uncomment to access host network; leave commented unless needed.
+    #extra_hosts:
+    #  - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data:/root/.ottie
+    entrypoint: ["ottie", "agent"]
+    stdin_open: true
+    tty: true
+
+  # ─────────────────────────────────────────────
+  # Ottie Gateway (Long-running Bot)
+  #   docker compose -f docker/docker-compose.yml --profile gateway up
+  # ─────────────────────────────────────────────
+  ottie-gateway:
+    image: docker.io/sipeed/ottie:latest
+    container_name: ottie-gateway
+    restart: on-failure
+    profiles:
+      - gateway
+    # Uncomment to access host network; leave commented unless needed.
+    #extra_hosts:
+    #  - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data:/root/.ottie
+
+  # ─────────────────────────────────────────────
+  # Ottie Launcher (Web Console + Gateway)
+  #   docker compose -f docker/docker-compose.yml --profile launcher up
+  # ─────────────────────────────────────────────
+  ottie-launcher:
+    image: docker.io/sipeed/ottie:launcher
+    container_name: ottie-launcher
+    restart: on-failure
+    profiles:
+      - launcher
+    environment:
+      - OTTIE_GATEWAY_HOST=0.0.0.0
+    ports:
+      - "127.0.0.1:18800:18800"
+      - "127.0.0.1:18790:18790"
+    volumes:
+      - ./data:/root/.ottie

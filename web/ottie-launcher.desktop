@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Ottie Launcher
+Comment=Web-based configuration and management UI for Ottie
+Exec=ottie-launcher
+Icon=ottie-launcher
+Terminal=true
+Type=Application
+Categories=Utility;Network;
+Keywords=ottie;ai;agent;bot;

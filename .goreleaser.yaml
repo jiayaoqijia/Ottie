@@ -1,0 +1,195 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+    - sh -c 'cd web/frontend && pnpm install && pnpm build:backend'
+    - go install github.com/tc-hib/go-winres@latest
+    - go-winres make --in web/backend/winres/winres.json --out web/backend/rsrc --product-version={{ .Version }} --file-version={{ .Version }}
+
+builds:
+  - id: ottie
+    env:
+      - CGO_ENABLED=0
+    tags:
+      - stdjson
+    ldflags:
+      - -s -w
+      - -X github.com/jiayaoqijia/ottie/pkg/config.Version={{ .Version }}
+      - -X github.com/jiayaoqijia/ottie/pkg/config.GitCommit={{ .ShortCommit }}
+      - -X github.com/jiayaoqijia/ottie/pkg/config.BuildTime={{ .Date }}
+      - -X github.com/jiayaoqijia/ottie/pkg/config.GoVersion={{ .Env.GOVERSION }}
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./cmd/ottie
+
+  - id: ottie-launcher
+    binary: ottie-launcher
+    env:
+      - CGO_ENABLED=0
+    tags:
+      - stdjson
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./web/backend
+
+  - id: ottie-launcher-tui
+    binary: ottie-launcher-tui
+    env:
+      - CGO_ENABLED=0
+    tags:
+      - stdjson
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./cmd/ottie-launcher-tui
+
+dockers_v2:
+  - id: ottie
+    dockerfile: docker/Dockerfile.goreleaser
+    extra_files:
+      - docker/entrypoint.sh
+    ids:
+      - ottie
+    images:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie"
+      - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
+    tags:
+      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly{{ else }}{{ .Tag }}{{ end }}'
+      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly{{ else }}latest{{ end }}'
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+  - id: ottie-full
+    dockerfile: docker/Dockerfile.goreleaser.full
+    extra_files:
+      - docker/entrypoint.sh
+    ids:
+      - ottie
+    images:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie"
+      - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
+    tags:
+      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-full{{ else }}{{ .Tag }}-full{{ end }}'
+      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-full{{ else }}full{{ end }}'
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+  - id: ottie-launcher
+    dockerfile: docker/Dockerfile.goreleaser.launcher
+    ids:
+      - ottie
+      - ottie-launcher
+      - ottie-launcher-tui
+    images:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie"
+      - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
+    tags:
+      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-launcher{{ else }}{{ .Tag }}-launcher{{ end }}'
+      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-launcher{{ else }}launcher{{ end }}'
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids:
+        - ottie
+        - ottie-launcher
+        - ottie-launcher-tui
+      sign:
+        certificate: "{{.Env.MACOS_SIGN_P12}}"
+        password: "{{.Env.MACOS_SIGN_PASSWORD}}"
+      notarize:
+        issuer_id: "{{.Env.MACOS_NOTARY_ISSUER_ID}}"
+        key_id: "{{.Env.MACOS_NOTARY_KEY_ID}}"
+        key: "{{.Env.MACOS_NOTARY_KEY}}"
+        wait: true
+        timeout: 20m
+
+archives:
+  - formats: [tar.gz]
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+nfpms:
+  - id: ottie
+    ids:
+      - ottie
+      - ottie-launcher
+      - ottie-launcher-tui
+    package_name: ottie
+    file_name_template: >-
+      {{ .PackageName }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "arm64" }}aarch64
+      {{- else if eq .Arch "arm" }}armv{{ .Arm }}
+      {{- else }}{{ .Arch }}{{ end }}
+    vendor: ottie
+    homepage: https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie
+    maintainer: ottie contributors
+    description: ottie - a tool for managing and running tasks
+    license: MIT
+    formats:
+      - rpm
+      - deb
+    bindir: /usr/bin
+    contents:
+      - src: web/ottie-launcher.desktop
+        dst: /usr/share/applications/ottie-launcher.desktop
+      - src: web/ottie-launcher.png
+        dst: /usr/share/icons/hicolor/512x512/apps/ottie-launcher.png
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+# upx:
+#    - enabled: true
+#      compress: best
+#      lzma: true
+
+release:
+  disable: '{{ isEnvSet "NIGHTLY_BUILD" }}'
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

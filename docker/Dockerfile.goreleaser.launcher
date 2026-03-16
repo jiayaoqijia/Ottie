@@ -1,0 +1,12 @@
+FROM alpine:3.21
+
+ARG TARGETPLATFORM
+
+RUN apk add --no-cache ca-certificates tzdata
+
+COPY $TARGETPLATFORM/ottie /usr/local/bin/ottie
+COPY $TARGETPLATFORM/ottie-launcher /usr/local/bin/ottie-launcher
+COPY $TARGETPLATFORM/ottie-launcher-tui /usr/local/bin/ottie-launcher-tui
+
+ENTRYPOINT ["ottie-launcher"]
+CMD ["-public", "-no-browser"]

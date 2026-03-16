@@ -1,0 +1,62 @@
+# Binaries
+# Go build artifacts
+bin/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/ottie
+/ottie-test
+cmd/**/workspace
+
+# Ottie specific
+
+# Ottie
+.ottie/
+config.json
+sessions/
+build/
+
+# Coverage
+
+# Secrets & Config (keep templates, ignore actual secrets)
+.env
+config/config.json
+
+# Test
+coverage.txt
+coverage.html
+
+# OS
+.DS_Store
+
+# Ralph workspace
+ralph/
+.ralph/
+tasks/
+
+# Plans
+docs/plans/
+
+# Editors
+.vscode/
+.idea/
+
+# Vendor (use `go mod vendor` to recreate)
+vendor/
+
+# Added by goreleaser init:
+dist/
+*.vite/
+
+# Windows Application Icon/Resource
+*.syso
+
+# Keep embedded backend dist directory placeholder in VCS
+!web/backend/dist/
+web/backend/dist/*
+!web/backend/dist/.gitkeep
+CLAUDE.md

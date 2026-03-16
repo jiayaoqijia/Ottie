@@ -1,0 +1,10 @@
+.git
+.gitignore
+build/
+.ottie/
+config/
+.env
+.env.example
+*.md
+LICENSE
+assets/

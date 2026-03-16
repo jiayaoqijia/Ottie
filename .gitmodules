@@ -1,0 +1,9 @@
+[submodule "vendor/autoresearch"]
+	path = vendor/autoresearch
+	url = https://github.com/karpathy/autoresearch.git
+[submodule "vendor/agency-agents"]
+	path = vendor/agency-agents
+	url = https://github.com/msitarzewski/agency-agents.git
+[submodule "vendor/lightpanda-browser"]
+	path = vendor/lightpanda-browser
+	url = https://github.com/lightpanda-io/browser.git

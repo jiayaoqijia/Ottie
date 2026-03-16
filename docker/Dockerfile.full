@@ -1,0 +1,42 @@
+# ============================================================
+# Stage 1: Build the ottie binary (static, glibc-compatible)
+# ============================================================
+FROM golang:1.26.0 AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends make git && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Cache dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source and build (static binary)
+COPY . .
+RUN CGO_ENABLED=0 make build
+
+# ============================================================
+# Stage 2: headless-shell + ottie
+# ============================================================
+FROM chromedp/headless-shell:stable
+
+# Install useful tools (Debian-based image)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  ca-certificates \
+  curl \
+  git \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy ottie binary
+COPY --from=builder /src/build/ottie /usr/local/bin/ottie
+
+# Symlink headless-shell so ottie's findBrowser() can discover it
+RUN ln -s /headless-shell/headless-shell /usr/local/bin/headless-shell
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget -q --spider http://localhost:18790/health || exit 1
+
+# Override headless-shell's entrypoint
+ENTRYPOINT ["ottie"]
+CMD ["gateway"]

@@ -1,0 +1,24 @@
+# ============================================================
+# headless-shell base + ottie binary (for GoReleaser)
+# ============================================================
+FROM chromedp/headless-shell:stable
+
+ARG TARGETPLATFORM
+
+# Install useful tools (Debian-based image)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  ca-certificates \
+  curl \
+  git \
+  && rm -rf /var/lib/apt/lists/*
+
+# Symlink headless-shell so ottie's findBrowser() can discover it
+RUN ln -s /headless-shell/headless-shell /usr/local/bin/headless-shell
+
+COPY $TARGETPLATFORM/ottie /usr/local/bin/ottie
+COPY docker/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+# Override headless-shell's entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
