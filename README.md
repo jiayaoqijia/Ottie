@@ -244,10 +244,11 @@ make install            # Install to ~/.local/bin
 
 ## Acknowledgments
 
-Ottie is purpose-built for Ethereum and crypto, standing on the shoulders of these open-source projects:
+Ottie is purpose-built for Ethereum and crypto, standing on the shoulders of these open-source projects. See [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES) for full license texts.
 
 | Project | Contribution |
 |---------|-------------|
+| [nanobot](https://github.com/HKUDS/nanobot) | Direct upstream project that Ottie is based on: core agent loop, tool execution, multi-channel architecture, and skills engine |
 | [OpenClaw](https://github.com/openclaw/openclaw) | Core agent architecture foundations. Ottie diverges with domain-constrained security, self-evolving skills, and blockchain-native capabilities |
 | [PicoClaw](https://github.com/sipeed/picoclaw) | Original project that Ottie evolved from: multi-channel chat, skills engine, and embedded device support |
 | [autoresearch](https://github.com/karpathy/autoresearch) | Automated research skill for literature review and experiment pipelines |
