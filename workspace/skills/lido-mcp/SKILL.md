@@ -68,13 +68,18 @@ exec command="curl -s -X POST https://eth.llamarpc.com -H 'Content-Type: applica
 ```
 > `0x37cfdaca` = `getTotalPooledEther()`.
 
-## Lido REST API (Free, no auth)
+## Lido REST APIs (Free, no auth)
 
-Base: `https://eth-api.lido.fi`
+### APR API (`https://eth-api.lido.fi`)
 
-**Current APR**:
+**Current APR (7-day SMA)**:
 ```
 web_fetch url="https://eth-api.lido.fi/v1/protocol/steth/apr/sma"
+```
+
+**Latest APR**:
+```
+web_fetch url="https://eth-api.lido.fi/v1/protocol/steth/apr/last"
 ```
 
 **Protocol stats**:
@@ -82,14 +87,28 @@ web_fetch url="https://eth-api.lido.fi/v1/protocol/steth/apr/sma"
 web_fetch url="https://eth-api.lido.fi/v1/protocol/steth/stats"
 ```
 
-**Withdrawal queue status**:
+### Withdrawal Queue API (`https://wq-api.lido.fi`)
+
+**Queue wait time**:
 ```
-web_fetch url="https://eth-api.lido.fi/v1/protocol/withdrawals/status"
+web_fetch url="https://wq-api.lido.fi/v2/request-time/calculate"
 ```
 
-**Validators stats**:
+**Estimated time for specific amount**:
 ```
-web_fetch url="https://eth-api.lido.fi/v1/protocol/validators"
+web_fetch url="https://wq-api.lido.fi/v2/request-time/calculate?amount=32"
+```
+
+**Time for specific request IDs**:
+```
+web_fetch url="https://wq-api.lido.fi/v2/request-time?ids=1&ids=2"
+```
+
+### Reward History API (`https://reward-history-backend.lido.fi`)
+
+**Staking rewards for an address**:
+```
+web_fetch url="https://reward-history-backend.lido.fi/?address=0xUSER&currency=USD&onlyRewards=true"
 ```
 
 ## Governance (Aragon DAO)
@@ -119,21 +138,41 @@ exec command="curl -s -X POST 'https://hub.snapshot.org/graphql' -H 'Content-Typ
 | Withdrawal Queue | `0x889edC2eDab5f40e902b864aD4d7AdE8E412F9B1` |
 | Staking Router | `0xFdDf38947aFB03C621C71b06C9C70bce73f12999` |
 | Accounting Oracle | `0x852deD011285fe67063a08005c71a85690503Cee` |
+| Lido Locator | `0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb` |
+| Vault Hub | `0x1d201BE093d847f6446530Efb0E8Fb426d176709` |
+
+### Lido Earn Vaults (Mellow)
+
+| Vault | Address |
+|-------|---------|
+| strETH Vault | `0x277C6A642564A91ff78b008022D65683cEE5CCC5` |
+| DVstETH Vault | `0x5E362eb2c0706Bd1d134689eC75176018385430B` |
 
 ### wstETH on L2s
 
 | Network | wstETH Address |
 |---------|---------------|
 | Optimism | `0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb` |
-| Arbitrum | `0x5979D7b546E38E9Ab8E801a884E7B2862BcE0BcB` |
+| Arbitrum | `0x5979D7b546E38E414F7E9822514be443A4800529` |
 | Base | `0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452` |
 | Polygon | `0x03b54A6e9a984069379fae1a4fC4dBAE93B3bCCD` |
 | Scroll | `0xf610A9dfB7C89644979b4A0f27063E9e7d7Cda32` |
 | zkSync Era | `0x703b52F2b28fEbcB60E1372858AF5b18849FE867` |
-| Mantle | `0x458ed78EB972a369799c8e1E39E10Ee4B04BEe36` |
+| Mantle | `0x458ed78EB972a369799fb278c0243b25e5242A83` |
 | Linea | `0xB5beDd42000b71FddE22D3eE8a79Bd49A568fC8F` |
 | BNB Chain | `0x26c5e01524d2E6280A48F2c50fF6De7e52E9611C` |
-| Mode | `0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0` |
+| Mode | `0x98f96A4B34D03a2E6f225B28b8f8Cb1279562d81` |
+| Zircuit | `0xf0e673Bc224A8Ca3ff67a61605814666b1234833` |
+| Unichain | `0xc02fE7317D4eb8753a02c35fe019786854A92001` |
+
+### Chainlink Price Feeds
+
+| Feed | Address | Network |
+|------|---------|---------|
+| wstETH/USD | `0x8b6851156023f4f5a66f68bea80851c3d905ac93` | Ethereum |
+| wstETH/stETH | `0xB88BAc61a4Ca37C43a3725912B1f472c9A5bc061` | Base |
+| wstETH/stETH | `0xB1552C5e96B312d0Bf8b554186F846C40614a540` | Arbitrum |
+| wstETH/stETH | `0xe59EBa0D492cA53C6f46015EEa00517F2707dc77` | Optimism |
 
 ## MCP Tool Schema
 
@@ -161,5 +200,8 @@ All write operations must support `dry_run: true` to simulate without executing.
 - **stETH rebases daily** — holder balances change. Use `sharesOf()` for stable accounting.
 - **wstETH does NOT rebase** — preferred for DeFi, L2 bridging, and agent wallets.
 - **1-2 wei rounding**: stETH transfers may lose 1-2 wei due to shares math. Always use `transferShares()` for exact amounts.
-- **Withdrawal queue**: requests are NFTs (ERC-721). Finalization takes 1-5 days.
+- **Withdrawal queue**: requests are NFTs (ERC-721). Min 100 wei, max 1000 stETH per request. Finalization takes 1-5 days.
+- **Staking limits**: call `getCurrentStakeLimit()` before staking. If limit insufficient, swap on DEX instead.
 - **L2 wstETH**: bridged via canonical bridges. Same non-rebasing behavior as mainnet.
+- **Withdrawal functions**: `requestWithdrawalsWstETH()` accepts wstETH directly. Use `getWithdrawalStatus()` to check finalization.
+- **LDO token quirk**: returns `false` instead of reverting on transfer failure — always check return value.
