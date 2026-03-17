@@ -6,6 +6,7 @@
   <h3>Self-Evolving Agent for Ethereum and Crypto</h3>
 
   <p>
+    <a href="https://ottie.xyz"><img src="https://img.shields.io/badge/website-ottie.xyz-blue?style=flat" alt="Website"></a>
     <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go&logoColor=white" alt="Go">
     <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
   </p>
@@ -15,6 +16,8 @@
 ---
 
 Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 22 blockchain-native skills, multi-agent swarms, 13+ messaging channels. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money.
+
+**[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Documentation](https://ottie.xyz)**
 
 ## Why a Crypto-Specific Agent
 
