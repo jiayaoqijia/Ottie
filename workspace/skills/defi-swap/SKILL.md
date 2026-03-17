@@ -55,6 +55,52 @@ exec command="curl -s -X POST 'https://quote-api.jup.ag/v6/swap' -H 'Content-Typ
 web_fetch url="https://token.jup.ag/strict"
 ```
 
+### Uniswap Trading API (Requires API key)
+
+Base: `https://trade-api.gateway.uniswap.org/v1`
+
+> Requires header `x-api-key: YOUR_API_KEY` — get one at https://developers.uniswap.org/dashboard/
+
+**Check token approval**:
+```
+exec command="curl -s -X POST 'https://trade-api.gateway.uniswap.org/v1/check_approval' -H 'Content-Type: application/json' -H 'x-api-key: YOUR_API_KEY' -d '{\"walletAddress\":\"0xUSER\",\"token\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"amount\":\"1000000000\",\"chainId\":1}'"
+```
+
+**Get swap quote**:
+```
+exec command="curl -s -X POST 'https://trade-api.gateway.uniswap.org/v1/quote' -H 'Content-Type: application/json' -H 'x-api-key: YOUR_API_KEY' -d '{\"type\":\"EXACT_INPUT\",\"amount\":\"1000000000000000000\",\"tokenIn\":\"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE\",\"tokenOut\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"tokenInChainId\":1,\"tokenOutChainId\":1,\"swapper\":\"0xUSER\",\"slippageTolerance\":0.5}'"
+```
+
+**Execute swap (gasful, on-chain)**:
+```
+exec command="curl -s -X POST 'https://trade-api.gateway.uniswap.org/v1/swap' -H 'Content-Type: application/json' -H 'x-api-key: YOUR_API_KEY' -d '{\"quote\":QUOTE_FROM_ABOVE,\"signature\":\"0xSIGNED_PERMIT2\",\"permitData\":PERMIT_DATA_FROM_QUOTE}'"
+```
+
+**Execute swap (gasless, UniswapX)**:
+```
+exec command="curl -s -X POST 'https://trade-api.gateway.uniswap.org/v1/order' -H 'Content-Type: application/json' -H 'x-api-key: YOUR_API_KEY' -d '{\"quote\":QUOTE_FROM_ABOVE,\"signature\":\"0xSIGNED_ORDER\"}'"
+```
+
+**Check swap status**:
+```
+web_fetch url="https://trade-api.gateway.uniswap.org/v1/swaps?txHash=0xTX_HASH" headers="x-api-key: YOUR_API_KEY"
+```
+
+Supported chains (17+ mainnets):
+| Chain | ID | Chain | ID |
+|-------|----|-------|----|
+| Ethereum | 1 | Arbitrum | 42161 |
+| Optimism | 10 | Base | 8453 |
+| Polygon | 137 | BSC | 56 |
+| Avalanche | 43114 | zkSync | 324 |
+| Blast | 81457 | Zora | 7777777 |
+| Unichain | 130 | Celo | 42220 |
+| Linea | 59144 | World Chain | 480 |
+
+UniswapX gasless swaps available on: Ethereum (1), Arbitrum (42161), Base (8453), Unichain (130).
+
+Native token address: `0x0000000000000000000000000000000000000000`
+
 ### 1inch (Requires API key)
 
 Base: `https://api.1inch.dev/swap/v6.0/{chainId}`

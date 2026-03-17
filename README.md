@@ -26,7 +26,7 @@ General-purpose agents assume actions are reversible, networks are reliable, and
 ## Features
 
 - **Self-evolving skills** — learns from tasks and packages approaches as reusable skills with progressive 3-level disclosure
-- **Ethereum-native** — 8 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, CEX data, and research
+- **Ethereum-native** — 10 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, and vault monitoring
 - **Security first** — constrained blockchain domain (cannot access email, files, browser), prompt-injection guard, ClawWall DLP
 - **Super light** — single Go binary (<10MB), zero CGO, sub-second startup, runs on a $5/month VPS
 - **Multi-agent swarm** — Mode A (in-process goroutine workers) and Mode B (multi-bot Telegram coordination via Redis)
@@ -38,7 +38,7 @@ General-purpose agents assume actions are reversible, networks are reliable, and
 
 ## Crypto Skills
 
-Ottie ships with 8 crypto/DeFi skills covering the full stack. All use free, no-authentication APIs. Zero API keys required for read-only operations.
+Ottie ships with 10 crypto/DeFi skills covering the full stack. All use free, no-authentication APIs. Zero API keys required for read-only operations.
 
 | Layer | Skill | Capabilities | APIs |
 |-------|-------|-------------|------|
@@ -50,6 +50,8 @@ Ottie ships with 8 crypto/DeFi skills covering the full stack. All use free, no-
 | **Yield & Risk** | `defi-lending` | Lending rates, APY, health factors | Aave, Morpho, Compound, DefiLlama |
 | | `defi-staking` | Liquid staking APR, exchange rates | Lido, Rocket Pool, DefiLlama |
 | | `defi-yield` | Yield farming, APY comparison | DefiLlama, Pendle, Curve |
+| **Infrastructure** | `lido-mcp` | MCP server for Lido staking ops | Lido API, On-chain RPCs |
+| | `lido-vault-monitor` | Vault position monitoring & alerts | DefiLlama, Lido API, Aave |
 
 **Supported networks:** Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, Fantom, Solana
 
