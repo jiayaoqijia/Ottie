@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ottie — Self-Evolving Agent for Ethereum and Crypto</title>
+  <meta name="description" content="Purpose-built AI agent for Ethereum and crypto. Single binary, 22 blockchain-native skills, multi-agent swarms, 13+ messaging channels.">
+  <link rel="canonical" href="https://ottie.xyz">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Ottie — Self-Evolving Agent for Ethereum and Crypto">
+  <meta property="og:description" content="Purpose-built AI agent for Ethereum and crypto. Single binary, 22 blockchain-native skills, multi-agent swarms, 13+ messaging channels.">
+  <meta property="og:image" content="https://ottie.xyz/ottie_banner.jpg">
+  <meta property="og:url" content="https://ottie.xyz">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ottie — Self-Evolving Agent for Ethereum and Crypto">
+  <meta name="twitter:description" content="Purpose-built AI agent for Ethereum and crypto. Single binary, 22 blockchain-native skills, multi-agent swarms, 13+ messaging channels.">
+  <meta name="twitter:image" content="https://ottie.xyz/ottie_banner.jpg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #1D1D1F;
+      background: #FFFFFF;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .nav-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #1D1D1F;
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #1D1D1F;
+      text-decoration: none;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    .nav-links a:hover {
+      opacity: 1;
+    }
+
+    .nav-hamburger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .nav-hamburger svg {
+      width: 24px;
+      height: 24px;
+      fill: #1D1D1F;
+    }
+
+    /* ── Sections ── */
+    .section {
+      padding: 96px 24px;
+    }
+
+    .section-alt {
+      background: #F5F5F7;
+    }
+
+    .section-dark {
+      background: #1D1D1F;
+      color: #F5F5F7;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #2563EB;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      font-size: 1.0625rem;
+      color: #86868B;
+      max-width: 640px;
+      line-height: 1.6;
+    }
+
+    /* ── Fade-in Animation ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding-top: 140px;
+      padding-bottom: 80px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: #F5F5F7;
+      border-radius: 100px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #86868B;
+      margin-bottom: 24px;
+    }
+
+    .hero-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #30D158;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 20px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-stats {
+      font-size: 1.125rem;
+      color: #86868B;
+      margin-bottom: 40px;
+      font-weight: 400;
+    }
+
+    .hero-stats strong {
+      color: #1D1D1F;
+      font-weight: 600;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 56px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #1D1D1F;
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: #333336;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #2563EB;
+      border: 1.5px solid #2563EB;
+    }
+
+    .btn-secondary:hover {
+      background: #2563EB;
+      color: #FFFFFF;
+    }
+
+    .hero-image {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .hero-image img {
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    }
+
+    /* ── Why Cards ── */
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .why-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 36px 28px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .why-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 1.375rem;
+    }
+
+    .why-card h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .why-card p {
+      font-size: 0.9375rem;
+      color: #86868B;
+      line-height: 1.55;
+    }
+
+    /* ── Features Grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-top: 48px;
+    }
+
+    .feature-card {
+      background: #F5F5F7;
+      border-radius: 16px;
+      padding: 28px 24px;
+      transition: transform 0.2s;
+    }
+
+    .section-alt .feature-card {
+      background: #FFFFFF;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 0.8125rem;
+      color: #86868B;
+      line-height: 1.5;
+    }
+
+    /* ── Skills Cards ── */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .skill-layer {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 32px 28px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .skill-layer-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #2563EB;
+      margin-bottom: 16px;
+    }
+
+    .skill-layer h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .skill-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .skill-item:last-child {
+      border-bottom: none;
+    }
+
+    .skill-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+
+    .skill-apis {
+      font-size: 0.75rem;
+      color: #86868B;
+      text-align: right;
+    }
+
+    /* ── Networks ── */
+    .networks-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 48px;
+      justify-content: center;
+    }
+
+    .network-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #FFFFFF;
+      border-radius: 100px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .network-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ── Channels ── */
+    .channels-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 48px;
+      justify-content: center;
+    }
+
+    .channel-badge {
+      padding: 10px 20px;
+      background: #F5F5F7;
+      border-radius: 100px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1D1D1F;
+    }
+
+    /* ── Code Block ── */
+    .code-section {
+      background: #1D1D1F;
+      color: #F5F5F7;
+      padding: 96px 24px;
+    }
+
+    .code-block {
+      background: #000000;
+      border-radius: 16px;
+      padding: 32px;
+      margin-top: 32px;
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .code-block pre {
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: #E5E5E7;
+    }
+
+    .code-block .comment {
+      color: #6E6E73;
+    }
+
+    .code-block .cmd {
+      color: #30D158;
+    }
+
+    .code-alt {
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .code-alt p {
+      font-size: 0.875rem;
+      color: #86868B;
+    }
+
+    .code-alt code {
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+    }
+
+    /* ── Docker Table ── */
+    .docker-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 32px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .docker-table th {
+      text-align: left;
+      padding: 16px 24px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #86868B;
+      background: #F5F5F7;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .docker-table td {
+      padding: 16px 24px;
+      font-size: 0.9375rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .docker-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .docker-table code {
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.8125rem;
+      background: #F5F5F7;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .docker-size {
+      font-weight: 700;
+    }
+
+    /* ── Open Source ── */
+    .oss-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(37, 99, 235, 0.08);
+      color: #2563EB;
+      border-radius: 100px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .oss-description {
+      font-size: 1.0625rem;
+      color: #86868B;
+      max-width: 560px;
+      line-height: 1.65;
+      margin-bottom: 32px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      background: #1D1D1F;
+      color: #86868B;
+      padding: 48px 24px;
+    }
+
+    .footer-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.8125rem;
+      color: #86868B;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #F5F5F7;
+    }
+
+    .footer-copy {
+      font-size: 0.75rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 52px;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: 20px 24px;
+        gap: 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      }
+
+      .nav-links.open {
+        display: flex;
+      }
+
+      .nav-hamburger {
+        display: block;
+      }
+
+      .section {
+        padding: 64px 20px;
+      }
+
+      .hero {
+        padding-top: 110px;
+        padding-bottom: 56px;
+      }
+
+      .hero h1 {
+        font-size: clamp(2rem, 8vw, 3rem);
+      }
+
+      .why-grid,
+      .skills-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .code-section {
+        padding: 64px 20px;
+      }
+
+      .code-block {
+        padding: 20px;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+      }
+
+      .hero-cta {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ── -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">Ottie</a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#networks">Networks</a></li>
+        <li><a href="#quickstart">Quick Start</a></li>
+        <li><a href="https://github.com/jiayaoqijia/ottie" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="navToggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <section class="section hero" id="hero">
+    <div class="container">
+      <div class="fade-in">
+        <span class="hero-badge"><span class="hero-badge-dot"></span> Open Source</span>
+      </div>
+      <h1 class="fade-in">Self-Evolving Agent<br>for Ethereum and Crypto</h1>
+      <p class="hero-stats fade-in">
+        Pure Go &middot; <strong>22</strong> blockchain-native skills &middot; <strong>13+</strong> channels &middot; <strong>&lt;10MB</strong> binary
+      </p>
+      <div class="hero-cta fade-in">
+        <a href="https://github.com/jiayaoqijia/ottie" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="#quickstart" class="btn btn-secondary">Get Started</a>
+      </div>
+      <div class="hero-image fade-in">
+        <img src="ottie_banner.jpg" alt="Ottie Banner" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why Ottie ── -->
+  <section class="section section-alt" id="why">
+    <div class="container">
+      <p class="section-label fade-in">Why Ottie</p>
+      <h2 class="section-title fade-in">Built for irreversible, adversarial environments</h2>
+      <p class="section-subtitle fade-in">General-purpose agents assume actions are reversible and networks are reliable. None of this holds on public blockchains.</p>
+      <div class="why-grid">
+        <div class="why-card fade-in">
+          <div class="why-card-icon" style="background: #FFF1F0;">&#x1F6D1;</div>
+          <h3>Irreversible Transactions</h3>
+          <p>A bad email can be unsent. A bad transaction is permanent. Every action is treated as if real money is at stake — because it is.</p>
+        </div>
+        <div class="why-card fade-in">
+          <div class="why-card-icon" style="background: #FFF8E1;">&#x1F6E1;&#xFE0F;</div>
+          <h3>Adversarial Environment</h3>
+          <p>Constrained blast radius, prompt-injection guard, and ClawWall DLP. The agent cannot access email, files, or browser — only blockchain.</p>
+        </div>
+        <div class="why-card fade-in">
+          <div class="why-card-icon" style="background: #E8F5E9;">&#x1F504;</div>
+          <h3>Protocol Evolution</h3>
+          <p>DeFi protocols change weekly. Self-evolving skills adapt to upgrades automatically, keeping the agent current without manual updates.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ── -->
+  <section class="section" id="features">
+    <div class="container">
+      <p class="section-label fade-in">Features</p>
+      <h2 class="section-title fade-in">Everything you need, nothing you don't</h2>
+      <p class="section-subtitle fade-in">Single Go binary. Zero dependencies. Sub-second startup.</p>
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F9EC;</span>
+          <h3>Self-Evolving Skills</h3>
+          <p>Learns from tasks and packages approaches as reusable skills with 3-level disclosure</p>
+        </div>
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F4A0;</span>
+          <h3>Ethereum-Native</h3>
+          <p>8 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, and research</p>
+        </div>
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F512;</span>
+          <h3>Security First</h3>
+          <p>Domain-constrained agent, prompt-injection guard, ClawWall DLP protection</p>
+        </div>
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F680;</span>
+          <h3>Super Light</h3>
+          <p>&lt;10MB binary, zero CGO, sub-second startup, runs on a $5/month VPS</p>
+        </div>
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F41D;</span>
+          <h3>Multi-Agent Swarm</h3>
+          <p>In-process goroutine workers or multi-bot Telegram coordination via Redis</p>
+        </div>
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F4AC;</span>
+          <h3>13+ Channels</h3>
+          <p>Telegram, Discord, Slack, Signal, WhatsApp, Matrix, QQ, and more</p>
+        </div>
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F4CA;</span>
+          <h3>Visual Output</h3>
+          <p>render_html generates PNG charts and dashboards for data-heavy responses</p>
+        </div>
+        <div class="feature-card fade-in">
+          <span class="feature-icon">&#x1F50C;</span>
+          <h3>MCP Integration</h3>
+          <p>Dynamically loads tools from Model Context Protocol servers</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Crypto Skills ── -->
+  <section class="section section-alt" id="skills">
+    <div class="container">
+      <p class="section-label fade-in">Crypto Skills</p>
+      <h2 class="section-title fade-in">8 skills covering the full DeFi stack</h2>
+      <p class="section-subtitle fade-in">All use free, no-authentication APIs. Zero API keys required for read-only operations.</p>
+      <div class="skills-grid">
+        <div class="skill-layer fade-in">
+          <span class="skill-layer-label">Market Intelligence</span>
+          <h3>Data &amp; Research</h3>
+          <div class="skill-item">
+            <span class="skill-name">crypto-market-data</span>
+            <span class="skill-apis">CoinGecko, DefiLlama</span>
+          </div>
+          <div class="skill-item">
+            <span class="skill-name">crypto-cex</span>
+            <span class="skill-apis">Binance, Coinbase, Kraken</span>
+          </div>
+          <div class="skill-item">
+            <span class="skill-name">crypto-research</span>
+            <span class="skill-apis">Etherscan, Hyperliquid</span>
+          </div>
+        </div>
+        <div class="skill-layer fade-in">
+          <span class="skill-layer-label">On-Chain Operations</span>
+          <h3>Wallets &amp; Swaps</h3>
+          <div class="skill-item">
+            <span class="skill-name">crypto-wallet</span>
+            <span class="skill-apis">RPCs, Etherscan, ENS</span>
+          </div>
+          <div class="skill-item">
+            <span class="skill-name">defi-swap</span>
+            <span class="skill-apis">ParaSwap, Jupiter, 1inch</span>
+          </div>
+        </div>
+        <div class="skill-layer fade-in">
+          <span class="skill-layer-label">Yield &amp; Risk</span>
+          <h3>Lending, Staking, Yield</h3>
+          <div class="skill-item">
+            <span class="skill-name">defi-lending</span>
+            <span class="skill-apis">Aave, Morpho, Compound</span>
+          </div>
+          <div class="skill-item">
+            <span class="skill-name">defi-staking</span>
+            <span class="skill-apis">Lido, Rocket Pool</span>
+          </div>
+          <div class="skill-item">
+            <span class="skill-name">defi-yield</span>
+            <span class="skill-apis">DefiLlama, Pendle, Curve</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Networks ── -->
+  <section class="section" id="networks">
+    <div class="container" style="text-align: center;">
+      <p class="section-label fade-in">Networks</p>
+      <h2 class="section-title fade-in">9 chains supported</h2>
+      <p class="section-subtitle fade-in" style="margin-left: auto; margin-right: auto;">From Ethereum mainnet to L2s and alt-L1s.</p>
+      <div class="networks-grid fade-in">
+        <span class="network-badge"><span class="network-dot" style="background: #627EEA;"></span> Ethereum</span>
+        <span class="network-badge"><span class="network-dot" style="background: #28A0F0;"></span> Arbitrum</span>
+        <span class="network-badge"><span class="network-dot" style="background: #FF0420;"></span> Optimism</span>
+        <span class="network-badge"><span class="network-dot" style="background: #0052FF;"></span> Base</span>
+        <span class="network-badge"><span class="network-dot" style="background: #8247E5;"></span> Polygon</span>
+        <span class="network-badge"><span class="network-dot" style="background: #F0B90B;"></span> BSC</span>
+        <span class="network-badge"><span class="network-dot" style="background: #E84142;"></span> Avalanche</span>
+        <span class="network-badge"><span class="network-dot" style="background: #1969FF;"></span> Fantom</span>
+        <span class="network-badge"><span class="network-dot" style="background: #9945FF;"></span> Solana</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Channels ── -->
+  <section class="section section-alt" id="channels">
+    <div class="container" style="text-align: center;">
+      <p class="section-label fade-in">Channels</p>
+      <h2 class="section-title fade-in">13+ messaging platforms</h2>
+      <p class="section-subtitle fade-in" style="margin-left: auto; margin-right: auto;">One webhook server. Every platform your users are on.</p>
+      <div class="channels-wrap fade-in">
+        <span class="channel-badge">Telegram</span>
+        <span class="channel-badge">Discord</span>
+        <span class="channel-badge">Slack</span>
+        <span class="channel-badge">Signal</span>
+        <span class="channel-badge">WhatsApp</span>
+        <span class="channel-badge">Matrix</span>
+        <span class="channel-badge">QQ</span>
+        <span class="channel-badge">DingTalk</span>
+        <span class="channel-badge">LINE</span>
+        <span class="channel-badge">WeCom</span>
+        <span class="channel-badge">Feishu</span>
+        <span class="channel-badge">IRC</span>
+        <span class="channel-badge">Custom Webhooks</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Quick Start ── -->
+  <section class="code-section" id="quickstart">
+    <div class="container">
+      <p class="section-label fade-in" style="color: #5E9EFF;">Quick Start</p>
+      <h2 class="section-title fade-in" style="color: #F5F5F7;">Up and running in 4 commands</h2>
+      <div class="code-block fade-in">
+<pre><span class="comment"># Clone and build</span>
+<span class="cmd">git clone</span> https://github.com/jiayaoqijia/ottie.git && <span class="cmd">cd</span> ottie
+<span class="cmd">make build</span>
+
+<span class="comment"># Initialize config</span>
+<span class="cmd">./build/ottie onboard</span>
+
+<span class="comment"># Add your API key to ~/.ottie/config.json, then:</span>
+<span class="cmd">./build/ottie gateway</span></pre>
+      </div>
+      <div class="code-alt fade-in">
+        <p>Or use Docker: <code>docker compose -f docker/docker-compose.yml --profile gateway up</code></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Docker ── -->
+  <section class="section section-alt" id="docker">
+    <div class="container">
+      <p class="section-label fade-in">Docker</p>
+      <h2 class="section-title fade-in">Two images, your choice</h2>
+      <table class="docker-table fade-in">
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Size</th>
+            <th>Includes</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>ottie:minimal</code></td>
+            <td class="docker-size">~10MB</td>
+            <td>Go binary only</td>
+            <td>Production, VPS, CI</td>
+          </tr>
+          <tr>
+            <td><code>ottie:full</code></td>
+            <td class="docker-size">~250MB</td>
+            <td>Go binary + headless Chrome</td>
+            <td>Visual output, charts, dashboards</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Open Source ── -->
+  <section class="section" id="opensource">
+    <div class="container" style="text-align: center;">
+      <div class="fade-in">
+        <span class="oss-badge">AGPL-3.0</span>
+      </div>
+      <h2 class="section-title fade-in">Open source, always</h2>
+      <p class="oss-description fade-in" style="margin-left: auto; margin-right: auto;">Ottie is fully open source under the AGPL-3.0 license. Audit every line, fork it, self-host it. Your keys, your agent, your rules.</p>
+      <div class="fade-in">
+        <a href="https://github.com/jiayaoqijia/ottie" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          Star on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <ul class="footer-links">
+        <li><a href="https://github.com/jiayaoqijia/ottie" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://github.com/jiayaoqijia/ottie/issues" target="_blank" rel="noopener">Issues</a></li>
+        <li><a href="https://github.com/jiayaoqijia/ottie/blob/main/LICENSE" target="_blank" rel="noopener">License</a></li>
+      </ul>
+      <span class="footer-copy">&copy; 2025 Ottie. AGPL-3.0.</span>
+    </div>
+  </footer>
+
+  <!-- ── JavaScript ── -->
+  <script>
+    // Intersection Observer for fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach((el, i) => {
+      // Stagger children inside grids
+      const parent = el.parentElement;
+      if (parent && (parent.classList.contains('why-grid') ||
+                     parent.classList.contains('features-grid') ||
+                     parent.classList.contains('skills-grid'))) {
+        const siblings = Array.from(parent.children);
+        el.style.transitionDelay = (siblings.indexOf(el) * 0.1) + 's';
+      }
+      observer.observe(el);
+    });
+
+    // Mobile menu toggle
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    navToggle.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+    });
+
+    // Close menu on link click
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+      });
+    });
+  </script>
+
+</body>
+</html>
