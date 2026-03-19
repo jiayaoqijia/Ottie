@@ -15,7 +15,7 @@
 
 ---
 
-Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 31 blockchain-native skills, multi-agent swarms, 13+ messaging channels. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money.
+Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 33 blockchain-native skills, multi-agent swarms, 13+ messaging channels. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money.
 
 **[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Documentation](https://ottie.xyz)**
 
@@ -32,7 +32,7 @@ General-purpose agents assume actions are reversible, networks are reliable, and
 ## Features
 
 - **Self-evolving skills** — learns from tasks and packages approaches as reusable skills with progressive 3-level disclosure
-- **Ethereum-native** — 14 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, vault monitoring, privacy, identity, and agent treasury
+- **Ethereum-native** — 16 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, vault monitoring, privacy, identity, agent treasury, and machine payments
 - **Security first** — constrained blockchain domain (cannot access email, files, browser), prompt-injection guard, ClawWall DLP
 - **Privacy layer** — Venice AI zero-retention inference, Railgun ZK-SNARK private transfers, network egress monitoring
 - **Agent identity** — ERC-8004 on-chain identity, Self Protocol ZK proof-of-human, 8004scan agent discovery
@@ -46,7 +46,7 @@ General-purpose agents assume actions are reversible, networks are reliable, and
 
 ## Crypto Skills
 
-Ottie ships with 14 crypto/DeFi skills covering the full stack. All use free, no-authentication APIs. Zero API keys required for read-only operations.
+Ottie ships with 16 crypto/DeFi skills covering the full stack. All use free, no-authentication APIs. Zero API keys required for read-only operations.
 
 | Layer | Skill | Capabilities | APIs |
 |-------|-------|-------------|------|
@@ -64,6 +64,8 @@ Ottie ships with 14 crypto/DeFi skills covering the full stack. All use free, no
 | **Privacy & Identity** | `venice-private-ai` | Zero-retention LLM inference | Venice AI API |
 | | `privacy-layer` | ZK-SNARK private transfers, egress monitoring | Railgun Protocol |
 | | `self-agent-id` | ZK proof-of-human agent identity, soulbound NFTs | Self Protocol, Celo |
+| **Payments** | `mpp` | Machine-to-machine payments via HTTP 402 | MPP Protocol, Tempo |
+| | `tempo` | Paid API discovery and requests with auto-payment | Tempo Wallet |
 
 **Supported networks:** Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, Fantom, Solana
 
@@ -279,14 +281,19 @@ Ottie is purpose-built for Ethereum and crypto, standing on the shoulders of the
 The crypto/DeFi skills integrate with free APIs from:
 [CoinGecko](https://www.coingecko.com/) ·
 [DefiLlama](https://defillama.com/) ·
-[DexScreener](https://dexscreener.com/) ·
+[Uniswap](https://uniswap.org/) ·
 [ParaSwap](https://www.paraswap.io/) ·
 [Jupiter](https://jup.ag/) ·
 [Aave](https://aave.com/) ·
 [Lido](https://lido.fi/) ·
 [Etherscan](https://etherscan.io/) ·
 [Hyperliquid](https://hyperliquid.xyz/) ·
-[Snapshot](https://snapshot.org/)
+[Snapshot](https://snapshot.org/) ·
+[Venice AI](https://venice.ai/) ·
+[Railgun](https://railgun.org/) ·
+[Self Protocol](https://self.xyz/) ·
+[Tempo](https://tempo.xyz/) ·
+[MPP](https://mpp.dev/)
 
 ## License
 
