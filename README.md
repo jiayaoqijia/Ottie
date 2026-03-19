@@ -19,6 +19,12 @@ Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. S
 
 **[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Documentation](https://ottie.xyz)**
 
+### One-Click Launch Demo
+
+[![One-Click Launch Demo](https://img.shields.io/badge/▶_Watch_Demo-One--Click_Launch-blue?style=for-the-badge)](https://x.com/yq_acc/status/2034574641109639319)
+
+> Launch Ottie in seconds — no setup required. See the [demo video on X](https://x.com/yq_acc/status/2034574641109639319).
+
 ## Why a Crypto-Specific Agent
 
 General-purpose agents assume actions are reversible, networks are reliable, and authentication is optional. None of this holds on public blockchains. A bad email can be unsent. A bad transaction is permanent. Ottie is built from the ground up for an adversarial financial environment: constrained blast radius, self-evolving skills that adapt to protocol upgrades, and zero-dependency deployment.
