@@ -15,6 +15,10 @@
 
 ---
 
+> **Under Active Development** — Ottie is in early development. APIs, skills, and behavior may change without notice.
+
+> **Security Warning** — None of the skills or MCP servers listed here have been audited. This is a community-compiled directory of projects shared on social media, listed on skill hubs, and found across public repositories. We make no guarantees about their safety, integrity, or intentions. Exercise extreme caution with anything that touches wallets, private keys, seed phrases, or transaction signing — a malicious skill can compromise your agent and drain your funds. Always review the source code, verify the authors, and do your own research (DYOR) before installing or granting permissions to any skill or MCP server.
+
 Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 33 blockchain-native skills, multi-agent swarms, 13+ messaging channels. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money.
 
 **[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Documentation](https://ottie.xyz)**
