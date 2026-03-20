@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Ottie</title>
+  <link rel="canonical" href="https://ottie.xyz/privacy">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; color: #1D1D1F; background: #FFFFFF; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 720px; margin: 0 auto; padding: 80px 24px 96px; }
+    h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 8px; }
+    .updated { font-size: 0.875rem; color: #86868B; margin-bottom: 48px; }
+    h2 { font-size: 1.25rem; font-weight: 700; margin-top: 40px; margin-bottom: 12px; letter-spacing: -0.01em; }
+    h3 { font-size: 1rem; font-weight: 600; margin-top: 24px; margin-bottom: 8px; }
+    p, li { font-size: 0.9375rem; color: #424245; margin-bottom: 12px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { margin-bottom: 6px; }
+    a { color: #2563EB; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .back { display: inline-block; margin-bottom: 32px; font-size: 0.875rem; font-weight: 500; color: #86868B; }
+    strong { color: #1D1D1F; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { text-align: left; padding: 10px 16px; font-size: 0.875rem; border-bottom: 1px solid #E5E5E7; }
+    th { font-weight: 600; color: #1D1D1F; background: #F5F5F7; }
+    td { color: #424245; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">&larr; Back to ottie.xyz</a>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: March 2026</p>
+
+    <h2>1. Overview</h2>
+    <p>Ottie is open-source software that you can self-host. This Privacy Policy applies to the ottie.xyz website and the hosted one-click launch service at claw.altllm.ai. If you self-host Ottie, your privacy is governed by your own infrastructure — we have no access to your data.</p>
+
+    <h2>2. Data We Collect</h2>
+
+    <h3>Website (ottie.xyz)</h3>
+    <ul>
+      <li><strong>No cookies</strong> — the landing page does not use cookies or tracking scripts</li>
+      <li><strong>No analytics</strong> — we do not use Google Analytics or similar services</li>
+      <li><strong>Server logs</strong> — GitHub Pages may collect standard server logs (IP address, browser type, pages visited) as part of their service</li>
+    </ul>
+
+    <h3>One-Click Launch Service (claw.altllm.ai)</h3>
+    <ul>
+      <li><strong>API keys</strong> — keys you provide are used solely to configure your Ottie instance and are not stored after your session ends</li>
+      <li><strong>Session data</strong> — temporary session state required to run the service, deleted when the session ends</li>
+      <li><strong>No conversation logging</strong> — we do not log, store, or read your conversations with the agent</li>
+    </ul>
+
+    <h3>Self-Hosted Instances</h3>
+    <p>When you self-host Ottie, all data stays on your infrastructure. We have zero access to your conversations, API keys, wallet addresses, or any other data.</p>
+
+    <h2>3. Data We Do NOT Collect</h2>
+    <ul>
+      <li>Wallet private keys or seed phrases</li>
+      <li>Conversation content or prompts</li>
+      <li>Transaction details or blockchain activity</li>
+      <li>Financial data or portfolio information</li>
+      <li>Personal identification documents</li>
+    </ul>
+
+    <h2>4. How We Use Data</h2>
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Purpose</th><th>Retention</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Server logs (GitHub Pages)</td><td>Serve the website</td><td>Per GitHub's policy</td></tr>
+        <tr><td>Session data (one-click launch)</td><td>Run your agent instance</td><td>Deleted at session end</td></tr>
+        <tr><td>Conversation content</td><td>Not collected</td><td>N/A</td></tr>
+        <tr><td>Wallet/financial data</td><td>Not collected</td><td>N/A</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. Third-Party Services</h2>
+    <p>Ottie integrates with third-party APIs. When you use these integrations, your requests go directly to those services. Each has its own privacy policy:</p>
+    <ul>
+      <li><a href="https://pages.github.com/privacy/">GitHub Pages</a> — website hosting</li>
+      <li><a href="https://www.coingecko.com/en/privacy">CoinGecko</a> — market data</li>
+      <li><a href="https://defillama.com/privacy">DefiLlama</a> — DeFi data</li>
+      <li><a href="https://docs.lido.fi">Lido</a> — staking data</li>
+      <li><a href="https://docs.uniswap.org">Uniswap</a> — swap data</li>
+      <li><a href="https://venice.ai/privacy">Venice AI</a> — private LLM inference (zero retention)</li>
+      <li>LLM providers (OpenAI, Anthropic, etc.) — per your own API key and their policies</li>
+    </ul>
+
+    <h2>6. Data Security</h2>
+    <ul>
+      <li><strong>ClawWall DLP</strong> — prevents sensitive data (private keys, mnemonics) from reaching LLM providers</li>
+      <li><strong>Domain constraint</strong> — the agent cannot access email, files, or browser — only blockchain operations</li>
+      <li><strong>Prompt injection guard</strong> — protects against prompt injection attacks</li>
+      <li><strong>HTTPS</strong> — all website and API traffic is encrypted via TLS</li>
+    </ul>
+
+    <h2>7. Your Rights</h2>
+    <p>Since we collect minimal data:</p>
+    <ul>
+      <li><strong>Self-hosted users</strong>: You control all your data. Delete it anytime.</li>
+      <li><strong>Website visitors</strong>: We don't collect personal data beyond standard server logs (controlled by GitHub).</li>
+      <li><strong>One-click launch users</strong>: Session data is ephemeral and automatically deleted.</li>
+    </ul>
+    <p>For any privacy questions, open an issue at <a href="https://github.com/jiayaoqijia/ottie/issues">github.com/jiayaoqijia/ottie/issues</a>.</p>
+
+    <h2>8. Children's Privacy</h2>
+    <p>Ottie is not intended for users under 13. We do not knowingly collect data from children.</p>
+
+    <h2>9. International Users</h2>
+    <p>The ottie.xyz website is hosted via GitHub Pages (US-based). By using the site, you consent to data processing in the United States. For self-hosted instances, data stays in your chosen jurisdiction.</p>
+
+    <h2>10. Changes</h2>
+    <p>We may update this policy. Changes will be posted on this page with an updated date. The open-source nature of Ottie means you can always audit exactly what data the software handles.</p>
+
+    <h2>11. Contact</h2>
+    <p>For privacy questions: <a href="https://github.com/jiayaoqijia/ottie/issues">github.com/jiayaoqijia/ottie/issues</a></p>
+  </div>
+</body>
+</html>
