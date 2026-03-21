@@ -1,0 +1,41 @@
+{
+  "name": "Ottie",
+  "description": "Self-Evolving Agent for Ethereum — purpose-built AI agent for Ethereum and crypto. Single binary, 36 blockchain-native skills, multi-agent swarms, 13+ messaging channels.",
+  "image": "https://ottie.xyz/logo.png",
+  "version": "1.0.0",
+  "services": {
+    "mcp": {
+      "url": "https://ottie.xyz/mcp"
+    },
+    "web": {
+      "url": "https://ottie.xyz"
+    }
+  },
+  "skills": [
+    "crypto-market-data",
+    "crypto-wallet",
+    "defi-swap",
+    "defi-lending",
+    "defi-staking",
+    "defi-yield",
+    "crypto-cex",
+    "crypto-research",
+    "lido-mcp",
+    "vault-monitoring",
+    "steth-treasury",
+    "autonomous-execution"
+  ],
+  "domains": [
+    "ethereum",
+    "defi",
+    "staking",
+    "trading",
+    "crypto-research"
+  ],
+  "supportedTrust": [
+    "reputation",
+    "validation"
+  ],
+  "chains": [1, 11155111, 8453, 42161, 10],
+  "active": true
+}

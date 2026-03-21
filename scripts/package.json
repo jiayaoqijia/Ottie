@@ -1,0 +1,19 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "agent0-sdk": "^1.7.1",
+    "dotenv": "^17.3.1",
+    "ethers": "^6.16.0",
+    "solc": "^0.8.34"
+  }
+}

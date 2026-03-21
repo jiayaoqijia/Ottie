@@ -30,6 +30,10 @@ config/config.json
 coverage.txt
 coverage.html
 
+# Node
+node_modules/
+package-lock.json
+
 # OS
 .DS_Store
 
@@ -60,3 +64,9 @@ dist/
 web/backend/dist/*
 !web/backend/dist/.gitkeep
 CLAUDE.md
+
+# Demo recordings (large video files)
+demos/videos/
+demos/sessions/
+demos/node_modules/
+demos/test-results/

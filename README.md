@@ -19,15 +19,32 @@
 
 > **Security Warning** — None of the skills or MCP servers listed here have been audited. This is a community-compiled directory of projects shared on social media, listed on skill hubs, and found across public repositories. We make no guarantees about their safety, integrity, or intentions. Exercise extreme caution with anything that touches wallets, private keys, seed phrases, or transaction signing — a malicious skill can compromise your agent and drain your funds. Always review the source code, verify the authors, and do your own research (DYOR) before installing or granting permissions to any skill or MCP server.
 
-Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 33 blockchain-native skills, multi-agent swarms, 13+ messaging channels. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money.
+Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 36 blockchain-native skills, multi-agent swarms, 13+ messaging channels, and verified on-chain presence via ERC-8004. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money — with real on-chain transactions, deployed contracts, and verifiable execution logs.
 
-**[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Documentation](https://ottie.xyz)**
+**[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Documentation](https://ottie.xyz)** · **[Demo Videos](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)**
 
 ### One-Click Launch Demo
 
 [![One-Click Launch Demo](https://img.shields.io/badge/▶_Watch_Demo-One--Click_Launch-blue?style=for-the-badge)](https://x.com/yq_acc/status/2034574641109639319)
 
 > Launch Ottie in seconds — no setup required. See the [demo video on X](https://x.com/yq_acc/status/2034574641109639319).
+
+### Synthesis Hackathon Demos
+
+Demo videos for all 10 hackathon tracks: **[Google Drive](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)**
+
+| Track | Demo |
+|-------|------|
+| Lido MCP Server | 10 ops: APR, stats, balance, stake, wrap, unwrap, withdraw, governance, vault health |
+| Uniswap Swap | Real ETH→USDC swap on Sepolia via Trading API |
+| Venice AI Private Agents | Model listing, zero-retention inference, on-chain action |
+| Let the Agent Cook | 5-step autonomous: discover → plan → execute → verify → report |
+| ERC-8004 Agent Identity | NFT mint, 8004scan verification, reputation registry |
+| stETH Agent Treasury | Contract deploy, deposit, yield query, permission controls |
+| Vault Monitor + Telegram | APR vs Aave benchmark, alert generation |
+| Self Agent ID | ZK proof-of-human registration flow |
+| ERC-8183 Agentic Commerce | Job escrow creation, evaluator attestation |
+| Open Track | Full capability showcase with live data |
 
 ## Why a Crypto-Specific Agent
 
@@ -36,21 +53,76 @@ General-purpose agents assume actions are reversible, networks are reliable, and
 ## Features
 
 - **Self-evolving skills** — learns from tasks and packages approaches as reusable skills with progressive 3-level disclosure
-- **Ethereum-native** — 16 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, vault monitoring, privacy, identity, agent treasury, and machine payments
+- **Ethereum-native** — 36 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, vault monitoring, privacy, identity, agent treasury, and machine payments
+- **On-chain verified** — registered as [ERC-8004 Agent #1988](https://www.8004scan.io/agent/11155111:1988) on Sepolia, with deployed AgentTreasury contract and real Uniswap swaps
+- **Lido MCP Server** — 14-tool MCP server for Lido staking: stake, wrap, unwrap, withdraw, balance, APR, governance, vault health — all with `dry_run` support
 - **Security first** — constrained blockchain domain (cannot access email, files, browser), prompt-injection guard, ClawWall DLP
 - **Privacy layer** — Venice AI zero-retention inference, Railgun ZK-SNARK private transfers, network egress monitoring
 - **Agent identity** — ERC-8004 on-chain identity, Self Protocol ZK proof-of-human, 8004scan agent discovery
+- **Autonomous execution** — discover → plan → execute → verify → report pipeline with structured `agent_log.json` output
 - **Super light** — single Go binary (<10MB), zero CGO, sub-second startup, runs on a $5/month VPS
 - **Multi-agent swarm** — Mode A (in-process goroutine workers) and Mode B (multi-bot Telegram coordination via Redis)
 - **13+ channels** — Telegram, Discord, Slack, Signal, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, IRC
 - **Multi-provider** — OpenAI, Anthropic, Venice, Zhipu, DeepSeek, Groq, Ollama with configurable fallback chains
 - **Visual output** — render_html generates PNG charts/dashboards for data-heavy responses
-- **MCP integration** — dynamically loads tools from Model Context Protocol servers
+- **MCP integration** — dynamically loads tools from Model Context Protocol servers (Lido MCP included)
 - **9 networks** — Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, Fantom, and Solana
+
+## On-Chain Implementations
+
+Real on-chain transactions and deployed contracts on Sepolia testnet — not mocks, not simulations.
+
+### Verified On-Chain Artifacts
+
+| Artifact | Address / TX | Explorer |
+|----------|-------------|----------|
+| **ERC-8004 Agent Identity** | Token #1988 on Identity Registry | [8004scan.io](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111) |
+| **Uniswap ETH→USDC Swap** | `0xfa31963b...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/tx/0xfa31963bea66cd22318262090f79d716d8f9dd470326936462c1824cd12e001f) |
+| **AgentTreasury Contract** | `0xc4EB9456...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/address/0xc4EB945689E0A13832004a44C0A3292a33E2Fec0) |
+| **MockWstETH Token** | `0xA40588cf...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/address/0xA40588cf901Fc56C5B5920D0300D5C36eBB45CE3) |
+| **ERC-8004 Registration TX** | `0xd3743846...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/tx/0xd374384682074831fd1549ec89a564f5a34acd59148285cec84d32e41f4cfd7c) |
+
+### Lido MCP Server
+
+A 14-tool MCP server (`mcp-servers/lido-mcp/server.py`) implementing the full Lido staking protocol:
+
+| Tool | Type | Description |
+|------|------|-------------|
+| `lido_apr` | read | stETH APR (7-day SMA) from Lido API |
+| `lido_stats` | read | Protocol stats: TVL, holders, market cap |
+| `lido_balance` | read | On-chain stETH balance for any address |
+| `lido_exchange_rate` | read | wstETH/stETH exchange rate (on-chain) |
+| `lido_rewards` | read | Reward history for an address |
+| `lido_withdrawal_status` | read | Withdrawal queue status |
+| `lido_governance_proposals` | read | Snapshot governance proposals |
+| `lido_stake` | write+dry_run | Stake ETH → stETH |
+| `lido_wrap` | write+dry_run | Wrap stETH → wstETH |
+| `lido_unwrap` | write+dry_run | Unwrap wstETH → stETH |
+| `lido_request_withdrawal` | write+dry_run | Request stETH withdrawal |
+| `lido_vote` | write+dry_run | Vote on Snapshot proposals |
+| `lido_vault_health` | read | Compare APR vs Aave benchmark |
+| `lido_alert_check` | read | Evaluate alert conditions |
+
+All write operations support `dry_run=true` for simulation via `eth_call`.
+
+### AgentTreasury Smart Contract
+
+Deployed Solidity contract (`contracts/AgentTreasury.sol`) where humans deposit wstETH and agents can only spend accrued yield — principal is locked:
+
+- `deposit(amount, agent)` — human deposits, authorizes agent
+- `queryYield(depositor)` — calculate available yield from exchange rate delta
+- `spendYield(depositor, recipient, amount)` — agent spends yield only
+- `withdrawPrincipal()` — depositor-only withdrawal
+- `setAllowedRecipient(address, bool)` — whitelist spending targets
+- `setPerTxCap(uint256)` — maximum per-transaction cap
+
+### E2E Test Suite
+
+37 tests across all 10 tracks: `bash demos/test-onchain.sh`
 
 ## Crypto Skills
 
-Ottie ships with 16 crypto/DeFi skills covering the full stack. All use free, no-authentication APIs. Zero API keys required for read-only operations.
+Ottie ships with 36 crypto/DeFi skills covering the full stack. All use free, no-authentication APIs. Zero API keys required for read-only operations.
 
 | Layer | Skill | Capabilities | APIs |
 |-------|-------|-------------|------|
@@ -62,12 +134,13 @@ Ottie ships with 16 crypto/DeFi skills covering the full stack. All use free, no
 | **Yield & Risk** | `defi-lending` | Lending rates, APY, health factors | Aave, Morpho, Compound, DefiLlama |
 | | `defi-staking` | Liquid staking APR, exchange rates | Lido, Rocket Pool, DefiLlama |
 | | `defi-yield` | Yield farming, APY comparison | DefiLlama, Pendle, Curve |
-| **Infrastructure** | `lido-mcp` | MCP server for Lido staking ops | Lido API, On-chain RPCs |
+| **Infrastructure** | `lido-mcp` | 14-tool MCP server for Lido staking | Lido API, On-chain RPCs, Snapshot |
 | | `lido-vault-monitor` | Vault position monitoring & alerts | DefiLlama, Lido API, Aave |
 | | `steth-treasury` | Yield-bearing agent budgets, principal-protected | wstETH, Lido |
 | **Privacy & Identity** | `venice-private-ai` | Zero-retention LLM inference | Venice AI API |
 | | `privacy-layer` | ZK-SNARK private transfers, egress monitoring | Railgun Protocol |
 | | `self-agent-id` | ZK proof-of-human agent identity, soulbound NFTs | Self Protocol, Celo |
+| | `8004` | ERC-8004 agent identity, reputation, validation | Agent0 SDK, 8004scan |
 | **Payments** | `mpp` | Machine-to-machine payments via HTTP 402 | MPP Protocol, Tempo |
 | | `tempo` | Paid API discovery and requests with auto-payment | Tempo Wallet |
 
@@ -114,6 +187,18 @@ Config lives at `~/.ottie/config.json`. Minimal example:
       "enabled": true,
       "token": "YOUR_BOT_TOKEN",
       "allow_from": ["YOUR_USER_ID"]
+    }
+  },
+  "tools": {
+    "mcp": {
+      "enabled": true,
+      "servers": {
+        "lido-mcp": {
+          "enabled": true,
+          "command": "python3",
+          "args": ["mcp-servers/lido-mcp/server.py"]
+        }
+      }
     }
   }
 }
@@ -296,6 +381,9 @@ The crypto/DeFi skills integrate with free APIs from:
 [Venice AI](https://venice.ai/) ·
 [Railgun](https://railgun.org/) ·
 [Self Protocol](https://self.xyz/) ·
+[ERC-8004 / Agent0](https://8004scan.io/) ·
+[ERC-8183](https://eips.ethereum.org/EIPS/eip-8183) ·
+[FastMCP](https://gofastmcp.com/) ·
 [Tempo](https://tempo.xyz/) ·
 [MPP](https://mpp.dev/)
 
