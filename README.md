@@ -9,29 +9,43 @@
     <a href="https://ottie.xyz"><img src="https://img.shields.io/badge/website-ottie.xyz-blue?style=flat" alt="Website"></a>
     <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go&logoColor=white" alt="Go">
     <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
+    <a href="https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111"><img src="https://img.shields.io/badge/ERC--8004-Agent_%231988-purple?style=flat" alt="ERC-8004"></a>
+    <a href="https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link"><img src="https://img.shields.io/badge/demos-10_tracks-green?style=flat" alt="Demos"></a>
   </p>
 
 </div>
 
 ---
 
-> **Under Active Development** — Ottie is in early development. APIs, skills, and behavior may change without notice.
-
-> **Security Warning** — None of the skills or MCP servers listed here have been audited. This is a community-compiled directory of projects shared on social media, listed on skill hubs, and found across public repositories. We make no guarantees about their safety, integrity, or intentions. Exercise extreme caution with anything that touches wallets, private keys, seed phrases, or transaction signing — a malicious skill can compromise your agent and drain your funds. Always review the source code, verify the authors, and do your own research (DYOR) before installing or granting permissions to any skill or MCP server.
-
 Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 36 blockchain-native skills, multi-agent swarms, 13+ messaging channels, and verified on-chain presence via ERC-8004. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money — with real on-chain transactions, deployed contracts, and verifiable execution logs.
 
-**[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Documentation](https://ottie.xyz)** · **[Demo Videos](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)**
+**[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Demo Videos](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)** · **[8004scan Profile](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111)**
 
-### One-Click Launch Demo
+## Features
 
-[![One-Click Launch Demo](https://img.shields.io/badge/▶_Watch_Demo-One--Click_Launch-blue?style=for-the-badge)](https://x.com/yq_acc/status/2034574641109639319)
+- **Self-evolving skills** — learns from tasks and packages approaches as reusable skills
+- **36 blockchain-native skills** — wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, vault monitoring, privacy, identity, treasury, payments
+- **On-chain verified** — [ERC-8004 Agent #1988](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111), deployed contracts, real Uniswap swaps on Sepolia
+- **Lido MCP Server** — 14 tools: stake, wrap, unwrap, withdraw, balance, APR, governance, vault health — all with `dry_run`
+- **Autonomous execution** — discover → plan → execute → verify → report pipeline
+- **Privacy layer** — Venice AI zero-retention inference, Railgun ZK-SNARK private transfers
+- **Agent identity** — ERC-8004 on-chain identity, Self Protocol ZK proof-of-human
+- **13+ channels** — Telegram, Discord, Slack, Signal, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, IRC
+- **Super light** — single Go binary (<10MB), zero CGO, sub-second startup
+- **Multi-agent swarm** — sub-agent spawning and multi-bot Telegram coordination
 
-> Launch Ottie in seconds — no setup required. See the [demo video on X](https://x.com/yq_acc/status/2034574641109639319).
+## On-Chain Artifacts
 
-### Synthesis Hackathon Demos
+| Artifact | Explorer |
+|----------|----------|
+| **ERC-8004 Agent #1988** | [8004scan.io](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111) |
+| **Uniswap ETH→USDC Swap** | [sepolia.etherscan.io](https://sepolia.etherscan.io/tx/0xfa31963bea66cd22318262090f79d716d8f9dd470326936462c1824cd12e001f) |
+| **AgentTreasury Contract** | [sepolia.etherscan.io](https://sepolia.etherscan.io/address/0xc4EB945689E0A13832004a44C0A3292a33E2Fec0) |
+| **ERC-8004 Registration TX** | [sepolia.etherscan.io](https://sepolia.etherscan.io/tx/0xd374384682074831fd1549ec89a564f5a34acd59148285cec84d32e41f4cfd7c) |
 
-Demo videos for all 10 hackathon tracks: **[Google Drive](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)**
+## Synthesis Hackathon Demos
+
+**[All 10 track demo videos](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)** — each recorded with real Ottie agent calls, step-by-step operations.
 
 | Track | Demo |
 |-------|------|
@@ -46,45 +60,21 @@ Demo videos for all 10 hackathon tracks: **[Google Drive](https://drive.google.c
 | ERC-8183 Agentic Commerce | Job escrow creation, evaluator attestation |
 | Open Track | Full capability showcase with live data |
 
-## Why a Crypto-Specific Agent
+37/37 E2E tests passing: `bash demos/test-onchain.sh`
 
-General-purpose agents assume actions are reversible, networks are reliable, and authentication is optional. None of this holds on public blockchains. A bad email can be unsent. A bad transaction is permanent. Ottie is built from the ground up for an adversarial financial environment: constrained blast radius, self-evolving skills that adapt to protocol upgrades, and zero-dependency deployment.
+## Quick Start
 
-## Features
+```bash
+git clone https://github.com/jiayaoqijia/ottie.git && cd ottie
+make build
+./build/ottie onboard
+./build/ottie gateway
+```
 
-- **Self-evolving skills** — learns from tasks and packages approaches as reusable skills with progressive 3-level disclosure
-- **Ethereum-native** — 36 crypto/DeFi skills covering wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, vault monitoring, privacy, identity, agent treasury, and machine payments
-- **On-chain verified** — registered as [ERC-8004 Agent #1988](https://www.8004scan.io/agent/11155111:1988) on Sepolia, with deployed AgentTreasury contract and real Uniswap swaps
-- **Lido MCP Server** — 14-tool MCP server for Lido staking: stake, wrap, unwrap, withdraw, balance, APR, governance, vault health — all with `dry_run` support
-- **Security first** — constrained blockchain domain (cannot access email, files, browser), prompt-injection guard, ClawWall DLP
-- **Privacy layer** — Venice AI zero-retention inference, Railgun ZK-SNARK private transfers, network egress monitoring
-- **Agent identity** — ERC-8004 on-chain identity, Self Protocol ZK proof-of-human, 8004scan agent discovery
-- **Autonomous execution** — discover → plan → execute → verify → report pipeline with structured `agent_log.json` output
-- **Super light** — single Go binary (<10MB), zero CGO, sub-second startup, runs on a $5/month VPS
-- **Multi-agent swarm** — Mode A (in-process goroutine workers) and Mode B (multi-bot Telegram coordination via Redis)
-- **13+ channels** — Telegram, Discord, Slack, Signal, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, IRC
-- **Multi-provider** — OpenAI, Anthropic, Venice, Zhipu, DeepSeek, Groq, Ollama with configurable fallback chains
-- **Visual output** — render_html generates PNG charts/dashboards for data-heavy responses
-- **MCP integration** — dynamically loads tools from Model Context Protocol servers (Lido MCP included)
-- **9 networks** — Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, Fantom, and Solana
+<details>
+<summary><b>Lido MCP Server (14 tools)</b></summary>
 
-## On-Chain Implementations
-
-Real on-chain transactions and deployed contracts on Sepolia testnet — not mocks, not simulations.
-
-### Verified On-Chain Artifacts
-
-| Artifact | Address / TX | Explorer |
-|----------|-------------|----------|
-| **ERC-8004 Agent Identity** | Token #1988 on Identity Registry | [8004scan.io](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111) |
-| **Uniswap ETH→USDC Swap** | `0xfa31963b...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/tx/0xfa31963bea66cd22318262090f79d716d8f9dd470326936462c1824cd12e001f) |
-| **AgentTreasury Contract** | `0xc4EB9456...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/address/0xc4EB945689E0A13832004a44C0A3292a33E2Fec0) |
-| **MockWstETH Token** | `0xA40588cf...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/address/0xA40588cf901Fc56C5B5920D0300D5C36eBB45CE3) |
-| **ERC-8004 Registration TX** | `0xd3743846...` | [sepolia.etherscan.io](https://sepolia.etherscan.io/tx/0xd374384682074831fd1549ec89a564f5a34acd59148285cec84d32e41f4cfd7c) |
-
-### Lido MCP Server
-
-A 14-tool MCP server (`mcp-servers/lido-mcp/server.py`) implementing the full Lido staking protocol:
+A FastMCP server (`mcp-servers/lido-mcp/server.py`) implementing the full Lido staking protocol:
 
 | Tool | Type | Description |
 |------|------|-------------|
@@ -105,9 +95,12 @@ A 14-tool MCP server (`mcp-servers/lido-mcp/server.py`) implementing the full Li
 
 All write operations support `dry_run=true` for simulation via `eth_call`.
 
-### AgentTreasury Smart Contract
+</details>
 
-Deployed Solidity contract (`contracts/AgentTreasury.sol`) where humans deposit wstETH and agents can only spend accrued yield — principal is locked:
+<details>
+<summary><b>AgentTreasury Smart Contract</b></summary>
+
+Deployed Solidity contract (`contracts/AgentTreasury.sol`) — humans deposit wstETH, agents can only spend accrued yield. Principal is locked.
 
 - `deposit(amount, agent)` — human deposits, authorizes agent
 - `queryYield(depositor)` — calculate available yield from exchange rate delta
@@ -116,13 +109,12 @@ Deployed Solidity contract (`contracts/AgentTreasury.sol`) where humans deposit 
 - `setAllowedRecipient(address, bool)` — whitelist spending targets
 - `setPerTxCap(uint256)` — maximum per-transaction cap
 
-### E2E Test Suite
+Deployed on Sepolia: [0xc4EB945689E0A13832004a44C0A3292a33E2Fec0](https://sepolia.etherscan.io/address/0xc4EB945689E0A13832004a44C0A3292a33E2Fec0)
 
-37 tests across all 10 tracks: `bash demos/test-onchain.sh`
+</details>
 
-## Crypto Skills
-
-Ottie ships with 36 crypto/DeFi skills covering the full stack. All use free, no-authentication APIs. Zero API keys required for read-only operations.
+<details>
+<summary><b>Crypto Skills (36 total)</b></summary>
 
 | Layer | Skill | Capabilities | APIs |
 |-------|-------|-------------|------|
@@ -146,27 +138,12 @@ Ottie ships with 36 crypto/DeFi skills covering the full stack. All use free, no
 
 **Supported networks:** Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, Avalanche, Fantom, Solana
 
-Skills are auto-loaded from `workspace/skills/`. Each includes reference files with token addresses, contract ABIs, and chain-specific configuration.
+</details>
 
-## Quick Start
+<details>
+<summary><b>Configuration</b></summary>
 
-```bash
-# Build
-git clone https://github.com/jiayaoqijia/ottie.git
-cd ottie
-make build
-
-# Initialize
-./build/ottie onboard
-
-# Configure (~/.ottie/config.json) — add your API key
-# Then run:
-./build/ottie gateway
-```
-
-## Configuration
-
-Config lives at `~/.ottie/config.json`. Minimal example:
+Config lives at `~/.ottie/config.json`:
 
 ```json
 {
@@ -204,16 +181,15 @@ Config lives at `~/.ottie/config.json`. Minimal example:
 }
 ```
 
-Use `vendor/model` format (e.g. `openai/gpt-5.4`, `zhipu/glm-4.7`, `ollama/llama3`). See `config.example.json` for all options.
-
-### Environment Variables
-
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OTTIE_HOME` | Root data directory | `~/.ottie` |
 | `OTTIE_CONFIG` | Config file path | `~/.ottie/config.json` |
 
-## CLI
+</details>
+
+<details>
+<summary><b>CLI</b></summary>
 
 | Command | Description |
 |---------|-------------|
@@ -224,53 +200,23 @@ Use `vendor/model` format (e.g. `openai/gpt-5.4`, `zhipu/glm-4.7`, `ollama/llama
 | `ottie status` | Show status |
 | `ottie cron list` | List scheduled jobs |
 
-## Chat Channels
+</details>
 
-13+ messaging platforms through a single webhook server on `127.0.0.1:18790`:
+<details>
+<summary><b>Chat Channels (13+)</b></summary>
 
 **Telegram** · **Discord** · **Slack** · **Signal** · **WhatsApp** · **Matrix** · **QQ** · **DingTalk** · **LINE** · **WeCom** · **Feishu** · **IRC** · **Custom Webhooks**
 
-Each channel gets a native adapter that handles platform-specific formatting, message splitting, and rich media embedding. The `render_html` tool converts charts and dashboards to PNG images that embed directly in any channel.
+Each channel gets a native adapter that handles platform-specific formatting, message splitting, and rich media embedding.
 
-## Docker
+</details>
 
-```bash
-git clone https://github.com/jiayaoqijia/ottie.git && cd ottie
-
-# First run — generates config
-docker compose -f docker/docker-compose.yml --profile gateway up
-
-# Edit docker/data/config.json with your API keys, then:
-docker compose -f docker/docker-compose.yml --profile gateway up -d
-```
-
-## Chromium (Optional)
-
-The `render_html` tool renders HTML/CSS to PNG images for rich visual output (dashboards, styled cards, charts). It requires Chromium or Google Chrome.
-
-```bash
-# macOS — Chrome is auto-detected from /Applications
-brew install --cask google-chrome
-
-# Debian/Ubuntu
-apt install chromium-browser
-
-# Alpine (Docker)
-apk add chromium
-
-# Verify
-ottie agent -m "render a hello world card"
-```
-
-If no browser is found, the tool is silently skipped — Ottie still works, but sends text instead of images.
-
-## Multi-Agent Swarm
-
-Ottie supports two optional collaboration modes. Both are entirely opt-in — your existing config works unchanged.
+<details>
+<summary><b>Multi-Agent Swarm</b></summary>
 
 ### Mode A: Sub-Agents (single process)
 
-One orchestrator spawns specialized workers internally. Add `agents.list` to your config:
+One orchestrator spawns specialized workers internally:
 
 ```json
 {
@@ -279,20 +225,16 @@ One orchestrator spawns specialized workers internally. Add `agents.list` to you
     "list": [
       {
         "id": "orchestrator", "default": true,
-        "identity": "You are the Orchestrator. Delegate tasks to sub-agents using sessions_spawn.",
+        "identity": "You are the Orchestrator.",
         "role": "orchestrator",
         "subagents": { "allow_agents": ["researcher", "coder"], "max_spawn_depth": 2 }
       },
       {
-        "id": "researcher",
-        "identity": "You are a Researcher. Find information and report back concisely.",
-        "role": "leaf",
+        "id": "researcher", "role": "leaf",
         "tools_allow": ["web_search", "web_fetch", "read_file", "list_dir"]
       },
       {
-        "id": "coder",
-        "identity": "You are a Coder. Write and edit code to complete tasks.",
-        "role": "leaf",
+        "id": "coder", "role": "leaf",
         "tools_allow": ["read_file", "write_file", "edit_file", "exec", "list_dir"]
       }
     ]
@@ -300,92 +242,33 @@ One orchestrator spawns specialized workers internally. Add `agents.list` to you
 }
 ```
 
-Then run normally — the orchestrator gets `sessions_spawn` and `sessions_control` tools automatically:
-
-```bash
-./build/ottie gateway          # via Telegram/Slack/etc.
-./build/ottie agent            # interactive CLI
-./build/ottie agent -m "Spawn researcher to find the latest Go version"
-```
-
 ### Mode B: Multi-Bot Telegram Group (multiple processes)
 
-Multiple Ottie instances run as separate bots in the same Telegram group, coordinating via a shared ProjectBoard.
-
-**Bot 1** (`~/.ottie/config.json`):
-```json
-{
-  "swarm": { "enabled": true, "instance_id": "coder-bot" },
-  "agents": { "list": [{ "id": "main", "identity": "You are the Coder." }] },
-  "channels": { "telegram": { "enabled": true, "token": "BOT1_TOKEN" } }
-}
-```
-
-**Bot 2** (`~/.ottie-researcher/config.json`):
-```json
-{
-  "swarm": { "enabled": true, "instance_id": "researcher-bot" },
-  "agents": { "list": [{ "id": "main", "identity": "You are the Researcher." }] },
-  "channels": { "telegram": { "enabled": true, "token": "BOT2_TOKEN" } }
-}
-```
-
-Run both:
-```bash
-OTTIE_HOME=~/.ottie ./build/ottie gateway &
-OTTIE_HOME=~/.ottie-researcher ./build/ottie gateway &
-```
-
-Each bot gets a `project_board` tool for posting/claiming tasks, sharing artifacts, and handing off work via @mentions.
+Multiple Ottie instances coordinate via shared ProjectBoard in Telegram groups.
 
 See [docs/multi-agent.md](docs/multi-agent.md) for the full guide.
 
-## Build Targets
+</details>
+
+<details>
+<summary><b>Docker & Build</b></summary>
 
 ```bash
+# Docker
+git clone https://github.com/jiayaoqijia/ottie.git && cd ottie
+docker compose -f docker/docker-compose.yml --profile gateway up
+
+# Build from source
 make build              # Current platform
 make build-all          # All platforms
-make build-linux-arm64  # Raspberry Pi 64-bit
 make test               # Run tests
-make install            # Install to ~/.local/bin
 ```
+
+</details>
 
 ## Acknowledgments
 
-Ottie is purpose-built for Ethereum and crypto, standing on the shoulders of these open-source projects. See [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES) for full license texts.
-
-| Project | Contribution |
-|---------|-------------|
-| [nanobot](https://github.com/HKUDS/nanobot) | Core agent loop, tool execution, multi-channel architecture, and skills engine |
-| [OpenClaw](https://github.com/openclaw/openclaw) | Core agent architecture foundations. Ottie diverges with domain-constrained security, self-evolving skills, and blockchain-native capabilities |
-| [PicoClaw](https://github.com/sipeed/picoclaw) | Original project that Ottie evolved from: multi-channel chat, skills engine, and embedded device support |
-| [autoresearch](https://github.com/karpathy/autoresearch) | Automated research skill for literature review and experiment pipelines |
-| [agency-agents](https://github.com/msitarzewski/agency-agents) | Multi-agent role patterns used in the agency-roles skill |
-| [chromedp](https://github.com/chromedp/chromedp) | Go library for driving headless Chrome, powering the render_html tool |
-| [chromedp/headless-shell](https://github.com/chromedp/docker-headless-shell) | Minimal headless Chrome Docker image for the `ottie:full` container |
-| [Lightpanda](https://github.com/lightpanda-io/browser) | Next-gen headless browser (Zig-based), tracked as a future lightweight alternative |
-
-### Skills & References
-
-The crypto/DeFi skills integrate with free APIs from:
-[CoinGecko](https://www.coingecko.com/) ·
-[DefiLlama](https://defillama.com/) ·
-[Uniswap](https://uniswap.org/) ·
-[ParaSwap](https://www.paraswap.io/) ·
-[Jupiter](https://jup.ag/) ·
-[Aave](https://aave.com/) ·
-[Lido](https://lido.fi/) ·
-[Etherscan](https://etherscan.io/) ·
-[Hyperliquid](https://hyperliquid.xyz/) ·
-[Snapshot](https://snapshot.org/) ·
-[Venice AI](https://venice.ai/) ·
-[Railgun](https://railgun.org/) ·
-[Self Protocol](https://self.xyz/) ·
-[ERC-8004 / Agent0](https://8004scan.io/) ·
-[ERC-8183](https://eips.ethereum.org/EIPS/eip-8183) ·
-[FastMCP](https://gofastmcp.com/) ·
-[Tempo](https://tempo.xyz/) ·
-[MPP](https://mpp.dev/)
+Built on [nanobot](https://github.com/HKUDS/nanobot), [OpenClaw](https://github.com/openclaw/openclaw), and [PicoClaw](https://github.com/sipeed/picoclaw). Integrates with [CoinGecko](https://www.coingecko.com/) · [DefiLlama](https://defillama.com/) · [Uniswap](https://uniswap.org/) · [Lido](https://lido.fi/) · [Aave](https://aave.com/) · [Venice AI](https://venice.ai/) · [ERC-8004](https://8004scan.io/) · [Self Protocol](https://self.xyz/) · [Snapshot](https://snapshot.org/) · [FastMCP](https://gofastmcp.com/) and more.
 
 ## License
 
