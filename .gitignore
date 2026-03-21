@@ -33,6 +33,11 @@ coverage.html
 # Node
 node_modules/
 package-lock.json
+/package.json
+
+# Python
+__pycache__/
+*.pyc
 
 # OS
 .DS_Store
