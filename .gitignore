@@ -64,6 +64,7 @@ dist/
 web/backend/dist/*
 !web/backend/dist/.gitkeep
 CLAUDE.md
+AGENTS.md
 
 # Demo recordings (large video files)
 demos/videos/
