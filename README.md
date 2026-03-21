@@ -140,8 +140,7 @@ Deployed on Sepolia: [0xc4EB945689E0A13832004a44C0A3292a33E2Fec0](https://sepoli
 
 </details>
 
-<details>
-<summary><b>Configuration</b></summary>
+## Configuration
 
 Config lives at `~/.ottie/config.json`:
 
@@ -181,15 +180,7 @@ Config lives at `~/.ottie/config.json`:
 }
 ```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OTTIE_HOME` | Root data directory | `~/.ottie` |
-| `OTTIE_CONFIG` | Config file path | `~/.ottie/config.json` |
-
-</details>
-
-<details>
-<summary><b>CLI</b></summary>
+## CLI
 
 | Command | Description |
 |---------|-------------|
@@ -200,55 +191,30 @@ Config lives at `~/.ottie/config.json`:
 | `ottie status` | Show status |
 | `ottie cron list` | List scheduled jobs |
 
-</details>
+## Chat Channels
 
-<details>
-<summary><b>Chat Channels (13+)</b></summary>
+13+ messaging platforms: **Telegram** · **Discord** · **Slack** · **Signal** · **WhatsApp** · **Matrix** · **QQ** · **DingTalk** · **LINE** · **WeCom** · **Feishu** · **IRC** · **Custom Webhooks**
 
-**Telegram** · **Discord** · **Slack** · **Signal** · **WhatsApp** · **Matrix** · **QQ** · **DingTalk** · **LINE** · **WeCom** · **Feishu** · **IRC** · **Custom Webhooks**
+## Multi-Agent Swarm
 
-Each channel gets a native adapter that handles platform-specific formatting, message splitting, and rich media embedding.
+**Mode A — Sub-Agents** (single process): one orchestrator spawns specialized workers internally via `sessions_spawn`.
 
-</details>
-
-<details>
-<summary><b>Multi-Agent Swarm</b></summary>
-
-### Mode A: Sub-Agents (single process)
-
-One orchestrator spawns specialized workers internally:
+**Mode B — Multi-Bot Telegram** (multiple processes): separate Ottie instances coordinate via shared ProjectBoard in a Telegram group.
 
 ```json
 {
   "agents": {
-    "defaults": { "model_name": "your-model" },
     "list": [
-      {
-        "id": "orchestrator", "default": true,
-        "identity": "You are the Orchestrator.",
-        "role": "orchestrator",
-        "subagents": { "allow_agents": ["researcher", "coder"], "max_spawn_depth": 2 }
-      },
-      {
-        "id": "researcher", "role": "leaf",
-        "tools_allow": ["web_search", "web_fetch", "read_file", "list_dir"]
-      },
-      {
-        "id": "coder", "role": "leaf",
-        "tools_allow": ["read_file", "write_file", "edit_file", "exec", "list_dir"]
-      }
+      { "id": "orchestrator", "default": true, "role": "orchestrator",
+        "subagents": { "allow_agents": ["researcher", "coder"] } },
+      { "id": "researcher", "role": "leaf",
+        "tools_allow": ["web_search", "web_fetch", "read_file"] },
+      { "id": "coder", "role": "leaf",
+        "tools_allow": ["read_file", "write_file", "edit_file", "exec"] }
     ]
   }
 }
 ```
-
-### Mode B: Multi-Bot Telegram Group (multiple processes)
-
-Multiple Ottie instances coordinate via shared ProjectBoard in Telegram groups.
-
-See [docs/multi-agent.md](docs/multi-agent.md) for the full guide.
-
-</details>
 
 <details>
 <summary><b>Docker & Build</b></summary>
