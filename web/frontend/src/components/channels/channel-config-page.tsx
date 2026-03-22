@@ -315,11 +315,6 @@ export function ChannelConfigPage({ channelName }: ChannelConfigPageProps) {
   const docsUrl = useMemo(() => {
     if (!channel) return ""
     if (CHANNELS_WITHOUT_DOCS.has(channel.name)) return ""
-    const language = (
-      i18n.resolvedLanguage ??
-      i18n.language ??
-      ""
-    ).toLowerCase()
     const base = "https://github.com/jiayaoqijia/Ottie/tree/main/docs/channels"
     return `${base}/${getChannelDocSlug(channel.name)}`
   }, [channel, i18n.language, i18n.resolvedLanguage])
