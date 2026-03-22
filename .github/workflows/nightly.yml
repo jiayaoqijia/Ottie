@@ -90,7 +90,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          DOCKERHUB_IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY }}
+          DOCKERHUB_IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY || 'jiayaoqijia/ottie' }}
           GOVERSION: ${{ steps.setup-go.outputs.go-version }}
           GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.version }}
           NIGHTLY_BUILD: "true"
