@@ -74,7 +74,8 @@ dockers_v2:
       - ottie
     images:
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie"
-      - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
+      # Docker Hub: uncomment when DOCKERHUB secrets are configured
+      # - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
     tags:
       - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly{{ else }}{{ .Tag }}{{ end }}'
       - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly{{ else }}latest{{ end }}'
@@ -90,7 +91,8 @@ dockers_v2:
       - ottie
     images:
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie"
-      - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
+      # Docker Hub: uncomment when DOCKERHUB secrets are configured
+      # - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
     tags:
       - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-full{{ else }}{{ .Tag }}-full{{ end }}'
       - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-full{{ else }}full{{ end }}'
@@ -106,7 +108,8 @@ dockers_v2:
       - ottie-launcher-tui
     images:
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie"
-      - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
+      # Docker Hub: uncomment when DOCKERHUB secrets are configured
+      # - 'docker.io/{{ .Env.DOCKERHUB_IMAGE_NAME }}'
     tags:
       - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-launcher{{ else }}{{ .Tag }}-launcher{{ end }}'
       - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly-launcher{{ else }}launcher{{ end }}'
