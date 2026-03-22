@@ -511,6 +511,57 @@ print('BSC_RPC_OK')
 \"" "BSC_RPC_OK"
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TRACK 11: Best Agent on Celo ($5K)
+# Req: On-chain Celo integration, cUSD interaction, Self Agent ID registry
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Track 11: Best Agent on Celo
+echo -e "\n${BOLD}━━━ Track 11: Best Agent on Celo ━━━${NC}"
+
+run_test "11" "Celo Mainnet RPC is reachable" \
+  "python3 -c \"
+import urllib.request, json
+payload = json.dumps({'jsonrpc':'2.0','method':'eth_chainId','params':[],'id':1}).encode()
+req = urllib.request.Request('https://forno.celo.org', data=payload, headers={'Content-Type':'application/json','User-Agent':'Ottie/1.0'})
+resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+chain_id = int(resp['result'], 16)
+assert chain_id == 42220, f'Wrong chain: {chain_id}'
+print(f'Celo Mainnet chain ID: {chain_id}')
+print('CELO_RPC_OK')
+\"" "CELO_RPC_OK"
+
+run_test "11" "Celo agent script executes" \
+  "cd $ROOT_DIR && node scripts/celo-agent.js 2>&1" \
+  "Celo Integration Complete"
+
+run_test "11" "cUSD contract readable on Celo mainnet" \
+  "python3 -c \"
+import urllib.request, json
+# Read cUSD name() on Celo mainnet — selector 0x06fdde03
+payload = json.dumps({'jsonrpc':'2.0','method':'eth_call','params':[{'to':'0x765DE816845861e75A25fCA122bb6898B8B1282a','data':'0x06fdde03'},'latest'],'id':1}).encode()
+req = urllib.request.Request('https://forno.celo.org', data=payload, headers={'Content-Type':'application/json','User-Agent':'Ottie/1.0'})
+resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+result = resp.get('result', '')
+assert len(result) > 10, f'Empty result: {result}'
+print(f'cUSD contract responds: {len(result)} bytes')
+print('CUSD_OK')
+\"" "CUSD_OK"
+
+run_test "11" "Self Agent ID registry exists on Celo mainnet" \
+  "python3 -c \"
+import urllib.request, json
+# Check contract code at Self Agent ID registry
+payload = json.dumps({'jsonrpc':'2.0','method':'eth_getCode','params':['0xaC3DF9ABf80d0F5c020C06B04Cced27763355944','latest'],'id':1}).encode()
+req = urllib.request.Request('https://forno.celo.org', data=payload, headers={'Content-Type':'application/json','User-Agent':'Ottie/1.0'})
+resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+code = resp.get('result', '0x')
+code_len = (len(code) - 2) // 2
+assert code_len > 10, f'No contract code: {code_len} bytes'
+print(f'Self Agent ID registry code: {code_len} bytes')
+print('REGISTRY_OK')
+\"" "REGISTRY_OK"
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # TRACK 10: Open Track ($28K)
 # Req: Ship something that works
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -533,6 +584,7 @@ scripts = {
     'scripts/vault-monitor-demo.sh': 30,
     'scripts/self-agent-register.js': 30,
     'scripts/erc8183-job.js': 40,
+    'scripts/celo-agent.js': 50,
     'workspace/agent.json': 5,
 }
 for path, min_lines in scripts.items():
