@@ -12,7 +12,7 @@ func newRemoveCommand(installerFn func() (*skills.SkillInstaller, error)) *cobra
 		Aliases: []string{"rm", "uninstall"},
 		Short:   "Remove installed skill",
 		Args:    cobra.ExactArgs(1),
-		Example: `ottie skills remove weather`,
+		Example: `ottie skills remove crypto-wallet`,
 		RunE: func(_ *cobra.Command, args []string) error {
 			installer, err := installerFn()
 			if err != nil {

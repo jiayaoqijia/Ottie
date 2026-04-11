@@ -21,11 +21,10 @@ func NewSessionsSpawnTool(manager *SwarmManager) *SessionsSpawnTool {
 	return &SessionsSpawnTool{manager: manager}
 }
 
-func (t *SessionsSpawnTool) Name() string { return "sessions_spawn" }
+func (t *SessionsSpawnTool) Name() string { return "delegate" }
 
 func (t *SessionsSpawnTool) Description() string {
-	return "Spawn a sub-agent session to handle a task. Use this to delegate work to specialized agents. " +
-		"The sub-agent runs independently and reports back when done."
+	return "Delegate a task to a specialized sub-agent session. The sub-agent runs independently and reports back when done."
 }
 
 func (t *SessionsSpawnTool) Parameters() map[string]any {

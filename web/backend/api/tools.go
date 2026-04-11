@@ -112,8 +112,8 @@ var toolCatalog = []toolCatalogEntry{
 		ConfigKey:   "install_skill",
 	},
 	{
-		Name:        "spawn",
-		Description: "Launch a background subagent for long-running or delegated work.",
+		Name:        "delegate",
+		Description: "Delegate a task to a subagent that runs in the background.",
 		Category:    "agents",
 		ConfigKey:   "spawn",
 	},
@@ -192,7 +192,7 @@ func buildToolSupport(cfg *config.Config) []toolSupportItem {
 					reasonCode = "requires_skills"
 				}
 			}
-		case "spawn":
+		case "delegate":
 			if cfg.Tools.IsToolEnabled(entry.ConfigKey) {
 				if cfg.Tools.IsToolEnabled("subagent") {
 					status = "enabled"
@@ -270,7 +270,7 @@ func applyToolState(cfg *config.Config, toolName string, enabled bool) error {
 		if enabled {
 			cfg.Tools.Skills.Enabled = true
 		}
-	case "spawn":
+	case "spawn", "delegate":
 		cfg.Tools.Spawn.Enabled = enabled
 		if enabled {
 			cfg.Tools.Subagent.Enabled = true

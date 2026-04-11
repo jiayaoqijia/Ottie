@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -101,42 +102,49 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 	skills := make([]SkillInfo, 0)
 	seen := make(map[string]bool)
 
-	addSkills := func(dir, source string) {
-		if dir == "" {
+	// addSkills walks the directory recursively looking for SKILL.md files.
+	// This supports category-nested layouts like
+	//     workspace/skills/crypto/crypto-wallet/SKILL.md
+	// as well as the legacy flat layout
+	//     workspace/skills/crypto-wallet/SKILL.md.
+	addSkills := func(root, source string) {
+		if root == "" {
 			return
 		}
-		dirs, err := os.ReadDir(dir)
-		if err != nil {
+		if _, err := os.Stat(root); err != nil {
 			return
 		}
-		for _, d := range dirs {
-			if !d.IsDir() {
-				continue
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return nil
 			}
-			skillFile := filepath.Join(dir, d.Name(), "SKILL.md")
-			if _, err := os.Stat(skillFile); err != nil {
-				continue
+			if d.IsDir() {
+				return nil
+			}
+			if d.Name() != "SKILL.md" {
+				return nil
 			}
 			info := SkillInfo{
-				Name:   d.Name(),
-				Path:   skillFile,
+				Name:   filepath.Base(filepath.Dir(path)),
+				Path:   path,
 				Source: source,
 			}
-			metadata := sl.getSkillMetadata(skillFile)
+			metadata := sl.getSkillMetadata(path)
 			if metadata != nil {
 				info.Description = metadata.Description
 				info.Name = metadata.Name
 			}
 			if err := info.validate(); err != nil {
 				slog.Warn("invalid skill from "+source, "name", info.Name, "error", err)
-				continue
+				return nil
 			}
 			if seen[info.Name] {
-				continue
+				return nil
 			}
 			seen[info.Name] = true
 			skills = append(skills, info)
-		}
+			return nil
+		})
 	}
 
 	// Priority: workspace > global > builtin
@@ -148,30 +156,53 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 }
 
 func (sl *SkillsLoader) LoadSkill(name string) (string, bool) {
-	// 1. load from workspace skills first (project-level)
-	if sl.workspaceSkills != "" {
-		skillFile := filepath.Join(sl.workspaceSkills, name, "SKILL.md")
-		if content, err := os.ReadFile(skillFile); err == nil {
+	// Try flat lookup first for speed. Fall back to a recursive walk that
+	// supports category-nested layouts like workspace/skills/defi/lido-mcp/.
+	tryLoad := func(root string) (string, bool) {
+		if root == "" {
+			return "", false
+		}
+		flat := filepath.Join(root, name, "SKILL.md")
+		if content, err := os.ReadFile(flat); err == nil {
 			return sl.stripFrontmatter(string(content)), true
 		}
-	}
-
-	// 2. then load from global skills (~/.ottie/skills)
-	if sl.globalSkills != "" {
-		skillFile := filepath.Join(sl.globalSkills, name, "SKILL.md")
-		if content, err := os.ReadFile(skillFile); err == nil {
-			return sl.stripFrontmatter(string(content)), true
+		var match string
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
+			if walkErr != nil || match != "" {
+				return nil
+			}
+			if d.IsDir() {
+				return nil
+			}
+			if d.Name() != "SKILL.md" {
+				return nil
+			}
+			if filepath.Base(filepath.Dir(path)) != name {
+				return nil
+			}
+			match = path
+			return filepath.SkipAll
+		})
+		if match == "" {
+			return "", false
 		}
-	}
-
-	// 3. finally load from builtin skills
-	if sl.builtinSkills != "" {
-		skillFile := filepath.Join(sl.builtinSkills, name, "SKILL.md")
-		if content, err := os.ReadFile(skillFile); err == nil {
-			return sl.stripFrontmatter(string(content)), true
+		content, err := os.ReadFile(match)
+		if err != nil {
+			return "", false
 		}
+		return sl.stripFrontmatter(string(content)), true
 	}
 
+	// Priority: workspace > global > builtin.
+	if c, ok := tryLoad(sl.workspaceSkills); ok {
+		return c, true
+	}
+	if c, ok := tryLoad(sl.globalSkills); ok {
+		return c, true
+	}
+	if c, ok := tryLoad(sl.builtinSkills); ok {
+		return c, true
+	}
 	return "", false
 }
 

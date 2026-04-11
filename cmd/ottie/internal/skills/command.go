@@ -66,18 +66,9 @@ func NewSkillsCommand() *cobra.Command {
 		return d.skillsLoader, nil
 	}
 
-	workspaceFn := func() (string, error) {
-		if d.workspace == "" {
-			return "", fmt.Errorf("workspace is not initialized")
-		}
-		return d.workspace, nil
-	}
-
 	cmd.AddCommand(
 		newListCommand(loaderFn),
 		newInstallCommand(installerFn),
-		newInstallBuiltinCommand(workspaceFn),
-		newListBuiltinCommand(),
 		newRemoveCommand(installerFn),
 		newSearchCommand(),
 		newShowCommand(loaderFn),

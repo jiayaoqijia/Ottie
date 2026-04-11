@@ -76,3 +76,13 @@ demos/videos/
 demos/sessions/
 demos/node_modules/
 demos/test-results/
+demos/recordings/
+
+# Codex / agent session state (tool-specific, not code)
+.context/
+
+# Playwright MCP scratch dir
+.playwright-mcp/
+
+# Local research checkouts (kept on disk for reference, not committed)
+research/hermes-agent/

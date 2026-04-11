@@ -63,8 +63,8 @@ func TestHandleListTools(t *testing.T) {
 	if gotTools["cron"].Status != "enabled" {
 		t.Fatalf("cron status = %q, want enabled", gotTools["cron"].Status)
 	}
-	if gotTools["spawn"].Status != "blocked" || gotTools["spawn"].ReasonCode != "requires_subagent" {
-		t.Fatalf("spawn = %#v, want blocked/requires_subagent", gotTools["spawn"])
+	if gotTools["delegate"].Status != "blocked" || gotTools["delegate"].ReasonCode != "requires_subagent" {
+		t.Fatalf("delegate = %#v, want blocked/requires_subagent", gotTools["delegate"])
 	}
 	if gotTools["find_skills"].Status != "enabled" {
 		t.Fatalf("find_skills status = %q, want enabled", gotTools["find_skills"].Status)

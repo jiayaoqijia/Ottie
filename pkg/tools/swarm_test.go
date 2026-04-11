@@ -537,7 +537,7 @@ func TestApplyFilter_SharedToolsFiltered(t *testing.T) {
 
 	// Shared tools (from registerSharedTools - added later)
 	reg.Register(&dummyTool{name: "web_search"})
-	reg.Register(&dummyTool{name: "sessions_spawn"})
+	reg.Register(&dummyTool{name: "delegate"})
 	reg.Register(&dummyTool{name: "project_board"})
 
 	// Re-apply filter (as done after shared tools)
@@ -552,7 +552,7 @@ func TestApplyFilter_SharedToolsFiltered(t *testing.T) {
 	if _, ok := reg.Get("write_file"); ok {
 		t.Error("write_file should be filtered out")
 	}
-	if _, ok := reg.Get("sessions_spawn"); ok {
+	if _, ok := reg.Get("delegate"); ok {
 		t.Error("sessions_spawn should be filtered out")
 	}
 	if _, ok := reg.Get("project_board"); ok {

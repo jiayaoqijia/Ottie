@@ -500,11 +500,17 @@ func DefaultConfig() *Config {
 			EditFile: ToolConfig{
 				Enabled: true,
 			},
+			// find_skills and install_skill are CLI-only by default.
+			// Exposing them on the model tool surface is a supply-chain risk
+			// (model can autonomously extend itself). Users who want the model
+			// to manage skills can enable these explicitly in their config.
+			// CLI equivalents (`ottie skills search`, `ottie skills install`)
+			// stay available regardless.
 			FindSkills: ToolConfig{
-				Enabled: true,
+				Enabled: false,
 			},
 			InstallSkill: ToolConfig{
-				Enabled: true,
+				Enabled: false,
 			},
 			ListDir: ToolConfig{
 				Enabled: true,

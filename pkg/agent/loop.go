@@ -283,9 +283,17 @@ func registerSharedTools(
 			}
 		}
 
-		// Spawn tool with allowlist checker
-		if cfg.Tools.IsToolEnabled("spawn") {
-			if cfg.Tools.IsToolEnabled("subagent") {
+		// delegate tool: unified surface for both Mode A (SubagentManager) and
+		// Mode B (SwarmManager). Orchestrator agents with subagents configured
+		// get the swarm-backed implementation; everyone else gets the local
+		// in-process SubagentManager. The tool is always called "delegate" so
+		// the model surface is identical regardless of backend.
+		if cfg.Tools.IsToolEnabled("delegate") || cfg.Tools.IsToolEnabled("spawn") {
+			if agent.Subagents != nil {
+				// Orchestrator path: SwarmManager-backed delegate registered
+				// by registerSwarmTools below.
+			} else if cfg.Tools.IsToolEnabled("subagent") {
+				// Local in-process delegate path.
 				subagentManager := tools.NewSubagentManager(provider, agent.Model, agent.Workspace)
 				subagentManager.SetLLMOptions(agent.MaxTokens, agent.Temperature)
 				spawnTool := tools.NewSpawnTool(subagentManager)
@@ -295,12 +303,12 @@ func registerSharedTools(
 				})
 				agent.Tools.Register(spawnTool)
 			} else {
-				logger.WarnCF("agent", "spawn tool requires subagent to be enabled", nil)
+				logger.WarnCF("agent", "delegate tool requires subagent to be enabled", nil)
 			}
 		}
 
-		// Swarm tools (Mode A): register sessions_spawn and sessions_control
-		// for orchestrator agents that have subagents configured.
+		// Swarm path: registerSwarmTools registers the SwarmManager-backed
+		// delegate for orchestrator agents with subagents configured.
 		registerSwarmTools(cfg, agent, agentID, provider, registry)
 
 		// ProjectBoard tool (Mode B): register when swarm is enabled.
@@ -354,19 +362,19 @@ func registerSwarmTools(
 
 	agent.SwarmManager = swarmMgr
 
-	// Register sessions_spawn tool
-	spawnTool := tools.NewSessionsSpawnTool(swarmMgr)
+	// Register swarm-backed delegate tool (same Name() as local delegate).
+	delegateTool := tools.NewSessionsSpawnTool(swarmMgr)
 	currentAgentID := agentID
-	spawnTool.SetAllowlistChecker(func(targetAgentID string) bool {
+	delegateTool.SetAllowlistChecker(func(targetAgentID string) bool {
 		return registry.CanSpawnSubagent(currentAgentID, targetAgentID)
 	})
-	agent.Tools.Register(spawnTool)
+	agent.Tools.Register(delegateTool)
 
-	// Register sessions_control tool
+	// Register sessions_control tool (swarm-only; has no local equivalent).
 	controlTool := tools.NewSessionsControlTool(swarmMgr)
 	agent.Tools.Register(controlTool)
 
-	logger.InfoCF("agent", "Registered swarm tools (sessions_spawn, sessions_control)",
+	logger.InfoCF("agent", "Registered swarm tools (delegate, sessions_control)",
 		map[string]any{"agent_id": agentID})
 }
 
