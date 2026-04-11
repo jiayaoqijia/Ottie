@@ -666,6 +666,34 @@ func (s *Store) GetBySessionTurn(ctx context.Context, sessionID string, turn int
 	return full, err
 }
 
+// MaxTurn returns the largest `turn` value recorded for a session,
+// or 0 if the session has no recorded turns. Used by the agent
+// loop to initialize a monotonic per-session turn counter that
+// survives process restarts and history summarization. Returns
+// ErrClosed if the store has been shut down.
+//
+// This is O(1) in the common case because traces has a composite
+// index on session_id (via the UNIQUE(session_id, turn)
+// constraint) and SQLite's MAX() on a single column is a direct
+// index lookup, not a scan.
+func (s *Store) MaxTurn(ctx context.Context, sessionID string) (int, error) {
+	if sessionID == "" {
+		return 0, errors.New("execmanifest: MaxTurn: sessionID required")
+	}
+	var maxTurn int
+	err := s.guardedRead(func() error {
+		row := s.db.QueryRowContext(ctx,
+			`SELECT COALESCE(MAX(turn), 0) FROM traces WHERE session_id = ?`,
+			sessionID,
+		)
+		return row.Scan(&maxTurn)
+	})
+	if err != nil {
+		return 0, err
+	}
+	return maxTurn, nil
+}
+
 // ListBySession returns every manifest for a session in turn order.
 // Returns a non-nil empty slice if the session has no recorded
 // turns. Each FullManifest's ProviderCalls slice is hydrated.

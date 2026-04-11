@@ -19,10 +19,12 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jiayaoqijia/ottie/pkg/acs"
 	"github.com/jiayaoqijia/ottie/pkg/bus"
 	"github.com/jiayaoqijia/ottie/pkg/channels"
 	"github.com/jiayaoqijia/ottie/pkg/commands"
 	"github.com/jiayaoqijia/ottie/pkg/config"
+	"github.com/jiayaoqijia/ottie/pkg/execmanifest"
 	"github.com/jiayaoqijia/ottie/pkg/constants"
 	"github.com/jiayaoqijia/ottie/pkg/infra"
 	"github.com/jiayaoqijia/ottie/pkg/logger"
@@ -59,6 +61,21 @@ type AgentLoop struct {
 	debouncer *infra.Debouncer
 	// Shared project board for multi-bot coordination (nil when swarm disabled)
 	projectBoard board.ProjectBoard
+	// R11 ACS bundle — optional replay coordinator (pkg/principal
+	// + pkg/actionlog + pkg/execmanifest). When cfg.ACS.Enabled is
+	// false this is nil and every ACS hook in the loop is a no-op,
+	// preserving bit-for-bit identical pre-R11 behavior.
+	acs *acs.Bundle
+	// acsTurnCounters maps session_key -> *atomic.Int64 for the
+	// monotonic per-session turn counter used by the execmanifest
+	// UNIQUE(session_id, turn) constraint. The counter is lazy-
+	// initialized from MaxTurn() on first use per session so it
+	// survives process restart AND history-summarization without
+	// colliding with older rows. Codex R11 caught that the
+	// previous `len(history)` proxy resets after summarization
+	// and produces duplicate (session_id, turn) pairs that
+	// silently disable ACS capture for every subsequent turn.
+	acsTurnCounters sync.Map
 }
 
 // processOptions configures how a message is processed
@@ -129,6 +146,30 @@ func NewAgentLoop(
 		al.debouncer = infra.NewDebouncer(delay, func(msg bus.InboundMessage) {
 			al.processAndRespond(context.Background(), msg)
 		})
+	}
+
+	// R11 ACS bundle: opened only when the config flag is on. The
+	// ACS-off path leaves al.acs nil so every hook in runAgentLoop
+	// / runLLMIteration is a cheap nil-check that matches the
+	// pre-R11 behavior exactly.
+	if cfg.ACS.Enabled {
+		dbDir := cfg.ACS.DBDir
+		if dbDir == "" && defaultAgent != nil {
+			dbDir = filepath.Join(defaultAgent.Workspace, "acs")
+		}
+		if dbDir != "" {
+			if bundle, err := acs.Open(acs.Config{
+				DBDir:           dbDir,
+				WriteQueueDepth: cfg.ACS.WriteQueueDepth,
+			}); err != nil {
+				logger.WarnCF("agent", "ACS bundle failed to open; continuing with ACS disabled",
+					map[string]any{"error": err.Error(), "db_dir": dbDir})
+			} else {
+				al.acs = bundle
+				logger.InfoCF("agent", "ACS bundle opened",
+					map[string]any{"db_dir": dbDir})
+			}
+		}
 	}
 
 	return al
@@ -473,6 +514,19 @@ func (al *AgentLoop) Stop() {
 func (al *AgentLoop) Close() {
 	if al.debouncer != nil {
 		al.debouncer.Stop()
+	}
+
+	// Close the ACS bundle (if opened). The bundle's Close is
+	// idempotent and drains in-flight ledger/manifest writes
+	// before returning. Errors are logged, not returned, because
+	// Close has no error-return signature and half-closed
+	// subsystems are better than never-closed ones.
+	if al.acs != nil {
+		if err := al.acs.Close(); err != nil {
+			logger.WarnCF("agent", "ACS bundle close error",
+				map[string]any{"error": err.Error()})
+		}
+		al.acs = nil
 	}
 
 	mcpManager := al.mcp.takeManager()
@@ -1068,8 +1122,26 @@ func (al *AgentLoop) runAgentLoop(
 	// 2. Save user message to session
 	agent.Sessions.AddMessage(opts.SessionKey, "user", opts.UserMessage)
 
+	// 2.5 Select the effective model tier for this turn. This
+	// runs ONCE per turn so tool-follow-up iterations do not
+	// switch models mid-way through. The result is passed into
+	// both beginACSTurn (so the manifest records the real model)
+	// and runLLMIteration (so the LLM call path uses the same
+	// tier it already does today).
+	activeCandidates, activeModel := al.selectCandidates(agent, opts.UserMessage, messages)
+
+	// 2.6 ACS: begin a turn manifest. The returned traceID is
+	// threaded into runLLMIteration so each LLM call can be
+	// recorded against the right row. When ACS is disabled the
+	// helper is not called at all (the ACS-off path has zero
+	// extra cost beyond the nil check) and acsTraceID stays "".
+	var acsTraceID string
+	if al.acs != nil {
+		acsTraceID = al.beginACSTurn(ctx, agent, opts, messages, activeModel)
+	}
+
 	// 3. Run LLM iteration loop
-	finalContent, iteration, mediaSent, err := al.runLLMIteration(ctx, agent, messages, opts)
+	finalContent, iteration, mediaSent, err := al.runLLMIteration(ctx, agent, messages, opts, acsTraceID, activeCandidates, activeModel)
 	if err != nil {
 		return "", err
 	}
@@ -1167,21 +1239,29 @@ func (al *AgentLoop) handleReasoning(
 }
 
 // runLLMIteration executes the LLM call loop with tool handling.
+// acsTraceID is the R11 execmanifest trace_id for this turn; when
+// empty, every ACS hook is a no-op. activeCandidates/activeModel
+// are pre-computed by runAgentLoop via selectCandidates so the
+// R11 manifest row can record the same model the turn uses.
 func (al *AgentLoop) runLLMIteration(
 	ctx context.Context,
 	agent *AgentInstance,
 	messages []providers.Message,
 	opts processOptions,
+	acsTraceID string,
+	activeCandidates []providers.FallbackCandidate,
+	activeModel string,
 ) (string, int, bool, error) {
 	iteration := 0
 	var finalContent string
 	mediaSent := false
-
-	// Determine effective model tier for this conversation turn.
-	// selectCandidates evaluates routing once and the decision is sticky for
-	// all tool-follow-up iterations within the same turn so that a multi-step
-	// tool chain doesn't switch models mid-way through.
-	activeCandidates, activeModel := al.selectCandidates(agent, opts.UserMessage, messages)
+	// acsCallSeq is the monotonic per-turn LLM-call counter.
+	// Every actual provider.Chat invocation — including retries
+	// in the outer loop and fallback-chain attempts inside
+	// callLLM — increments it via acsChat. The counter is
+	// closed over by callLLM so retries share one sequence.
+	acsCallSeq := 0
+	_ = acsCallSeq // silences "declared but not used" when acs is nil
 
 	// Drain any pending sub-agent announcements before starting the LLM loop.
 	// Announcements are injected as user messages so the LLM sees sub-agent
@@ -1262,6 +1342,39 @@ func (al *AgentLoop) runLLMIteration(
 			}
 		}
 
+		// ACS LLM-call instrumentation wrapper. Fires ONCE per
+		// actual provider.Chat invocation, including retries and
+		// fallback-chain attempts, so the execmanifest trace
+		// faithfully records every LLM call with the REAL model
+		// that was tried (not the configured primary). The per-
+		// turn callSeq is passed by pointer so retries inside
+		// the outer loop keep incrementing the same counter.
+		acsChat := func(ctx context.Context, modelUsed string, err error) {
+			if al.acs == nil || acsTraceID == "" {
+				return
+			}
+			seq := acsCallSeq
+			acsCallSeq++
+			status := "ok"
+			if err != nil {
+				status = "error"
+			}
+			rcErr := al.acs.RecordLLMCall(ctx, execmanifest.ProviderCall{
+				TraceID:   acsTraceID,
+				CallSeq:   seq,
+				RequestID: fmt.Sprintf("%s-call-%d-%s", acsTraceID, seq, status),
+				ModelID:   modelUsed,
+			})
+			if rcErr != nil {
+				logger.WarnCF("agent", "ACS RecordLLMCall failed (continuing)",
+					map[string]any{
+						"error":    rcErr.Error(),
+						"trace_id": acsTraceID,
+						"call_seq": seq,
+					})
+			}
+		}
+
 		callLLM := func() (*providers.LLMResponse, error) {
 			al.activeRequests.Add(1)
 			defer al.activeRequests.Done()
@@ -1271,7 +1384,11 @@ func (al *AgentLoop) runLLMIteration(
 					ctx,
 					activeCandidates,
 					func(ctx context.Context, provider, model string) (*providers.LLMResponse, error) {
-						return agent.Provider.Chat(ctx, messages, providerToolDefs, model, llmOpts)
+						resp, runErr := agent.Provider.Chat(ctx, messages, providerToolDefs, model, llmOpts)
+						// Record this specific attempt, success or failure,
+						// with the ACTUAL model the fallback chose.
+						acsChat(ctx, model, runErr)
+						return resp, runErr
 					},
 				)
 				if fbErr != nil {
@@ -1287,7 +1404,9 @@ func (al *AgentLoop) runLLMIteration(
 				}
 				return fbResult.Response, nil
 			}
-			return agent.Provider.Chat(ctx, messages, providerToolDefs, activeModel, llmOpts)
+			resp, err := agent.Provider.Chat(ctx, messages, providerToolDefs, activeModel, llmOpts)
+			acsChat(ctx, activeModel, err)
+			return resp, err
 		}
 
 		// Retry loop for context/token errors
@@ -1369,6 +1488,11 @@ func (al *AgentLoop) runLLMIteration(
 				})
 			return "", iteration, mediaSent, fmt.Errorf("LLM call failed after retries: %w", err)
 		}
+
+		// ACS LLM-call recording is handled INSIDE callLLM /
+		// acsChat so retries and fallback-chain attempts each
+		// get their own row with the real model. No recording
+		// needed here at the iteration level.
 
 		go al.handleReasoning(
 			ctx,
@@ -2172,4 +2296,151 @@ func extractProvider(registry *AgentRegistry) (providers.LLMProvider, bool) {
 		return nil, false
 	}
 	return defaultAgent.Provider, true
+}
+
+// beginACSTurn records a new execmanifest row at the top of a
+// turn. When the ACS bundle is disabled (al.acs == nil) this is a
+// cheap no-op that returns an empty traceID; every downstream ACS
+// hook then also skips because an empty traceID signals "ACS off".
+//
+// The manifest captures the prompt hash, a stand-in tool schema
+// hash, a monotonic per-session turn number (initialized from
+// execmanifest.MaxTurn on first use per session), and the model
+// the turn will use. Full tool schema hashing from the registry
+// is a follow-up — the current slice uses the message content
+// hash as a stand-in so the row is at least attributable.
+func (al *AgentLoop) beginACSTurn(
+	ctx context.Context,
+	agent *AgentInstance,
+	opts processOptions,
+	messages []providers.Message,
+	activeModel string,
+) string {
+	if al.acs == nil {
+		return ""
+	}
+	// Allocate a monotonic per-session turn number. This is
+	// strictly increasing for the life of the agent process AND
+	// lazily seeded from MaxTurn() so it survives process
+	// restarts — a crash and restart resumes counting from
+	// MAX(turn)+1 of what was on disk, not from 0. Codex R11
+	// caught that the previous len(history) proxy resets after
+	// history summarization and produces duplicate
+	// (session_id, turn) pairs on the UNIQUE constraint.
+	turnNum := al.allocateACSTurnNumber(ctx, opts.SessionKey)
+
+	promptHash := hashMessagesForACS(messages)
+	// Record the active model that the turn will actually use
+	// (after fallback-chain routing), not agent.Model. This
+	// matches what the provider call rows will say.
+	modelID := activeModel
+	if modelID == "" {
+		modelID = agent.Model
+	}
+	manifest := execmanifest.Manifest{
+		SessionID:      opts.SessionKey,
+		Turn:           turnNum,
+		PromptHash:     promptHash,
+		ToolSchemaHash: promptHash, // stand-in until a real schema hash is threaded in
+		SkillHashes:    nil,        // canonicalized to []
+		McpVersions:    nil,        // canonicalized to {}
+		ModelID:        modelID,
+		PromptEpoch:    0, // stand-in until the R4 §14 prompt epoch API is wired
+	}
+	traceID, err := al.acs.BeginTurn(ctx, manifest)
+	if err != nil {
+		logger.WarnCF("agent", "ACS BeginTurn failed (continuing)",
+			map[string]any{
+				"error":       err.Error(),
+				"session_key": opts.SessionKey,
+				"turn":        turnNum,
+			})
+		return ""
+	}
+	return traceID
+}
+
+// allocateACSTurnNumber returns a monotonic per-session turn
+// number. On first call for a session, it queries
+// execmanifest.MaxTurn to seed the counter from what's already on
+// disk; subsequent calls return atomic increments. The sync.Map
+// lookup + CAS pattern ensures concurrent turns on the same
+// session each get a distinct number without a global mutex.
+func (al *AgentLoop) allocateACSTurnNumber(ctx context.Context, sessionKey string) int {
+	if al.acs == nil {
+		return 0
+	}
+	counterAny, ok := al.acsTurnCounters.Load(sessionKey)
+	if !ok {
+		// Seed from disk. MaxTurn returns 0 on a fresh session
+		// so the first allocated number becomes 1.
+		maxTurn, err := al.acs.MaxTurn(ctx, sessionKey)
+		if err != nil {
+			// Unable to seed — log and fall back to starting
+			// from 0. The worst case is a collision on
+			// resume, which returns ErrTraceAlreadyRecorded and
+			// disables ACS for that turn. Better than failing
+			// the turn outright.
+			logger.WarnCF("agent", "ACS MaxTurn lookup failed, seeding counter from 0",
+				map[string]any{"error": err.Error(), "session_key": sessionKey})
+			maxTurn = 0
+		}
+		fresh := &atomic.Int64{}
+		fresh.Store(int64(maxTurn))
+		actual, loaded := al.acsTurnCounters.LoadOrStore(sessionKey, fresh)
+		if loaded {
+			counterAny = actual
+		} else {
+			counterAny = fresh
+		}
+	}
+	counter := counterAny.(*atomic.Int64)
+	return int(counter.Add(1))
+}
+
+// ACS LLM-call recording has moved into an inline closure inside
+// runLLMIteration (`acsChat`) so every provider.Chat invocation —
+// including retries in the outer loop and fallback-chain attempts
+// via providers.FallbackChain — gets its own execmanifest
+// provider-call row with the ACTUAL model that was tried. See
+// the acsChat closure at the top of the `for iteration < ...`
+// loop in runLLMIteration. The top-level helper that used to
+// live here was removed in the R11 fix round.
+
+// hashMessagesForACS produces a deterministic stand-in for the
+// R4 §14 prompt hash. It concatenates the message roles and first
+// 256 bytes of each content field and runs FNV-1a over the result.
+// The goal is attribution, not cryptographic integrity — the
+// dedicated prompt-epoch API from R4 §14 will replace this.
+func hashMessagesForACS(messages []providers.Message) string {
+	// Lightweight hash — avoids pulling crypto/sha256 into the
+	// hot path for what is an observability field.
+	var h uint64 = 1469598103934665603 // FNV-1a offset basis
+	for _, m := range messages {
+		for _, c := range m.Role {
+			h ^= uint64(c)
+			h *= 1099511628211
+		}
+		content := m.Content
+		if len(content) > 256 {
+			content = content[:256]
+		}
+		for _, c := range content {
+			h ^= uint64(c)
+			h *= 1099511628211
+		}
+	}
+	return fmt.Sprintf("fnv1a-%016x", h)
+}
+
+// acsTurnNumber returns a monotonic turn counter for a given
+// session. Uses the session history length as a proxy; the true
+// turn number is hard to derive without threading an atomic
+// counter through, which is out of scope for the R11 wiring.
+func acsTurnNumber(agent *AgentInstance, sessionKey string) int {
+	if agent == nil || agent.Sessions == nil {
+		return 0
+	}
+	history := agent.Sessions.GetHistory(sessionKey)
+	return len(history)
 }

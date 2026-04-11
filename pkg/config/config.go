@@ -88,6 +88,30 @@ type Config struct {
 	// BuildInfo contains build-time version information
 	BuildInfo BuildInfo   `json:"build_info,omitempty"`
 	Swarm     SwarmConfig `json:"swarm,omitempty"`
+	// ACS wires the R6/R7 replay triple (pkg/principal +
+	// pkg/actionlog + pkg/execmanifest) into the agent loop.
+	// Off by default; the ACS-off path is bit-for-bit identical
+	// to pre-R11 behavior so existing tests do not regress.
+	ACS ACSConfig `json:"acs,omitempty"`
+}
+
+// ACSConfig controls the R11 Adaptive Context System wiring.
+type ACSConfig struct {
+	// Enabled turns the coordinator on. When false, the agent
+	// loop does not open any ACS stores and the turn path has
+	// no manifest or ledger side effects.
+	Enabled bool `json:"enabled,omitempty"`
+
+	// DBDir is the directory where the action-ledger and
+	// execmanifest SQLite files are created. If empty, defaults
+	// to `<workspace>/acs/`. The directory must exist before
+	// the agent starts; Open does not create it.
+	DBDir string `json:"db_dir,omitempty"`
+
+	// WriteQueueDepth is passed through to both underlying
+	// writer actors. Zero means synchronous handoff; typical
+	// production value is 8-32.
+	WriteQueueDepth int `json:"write_queue_depth,omitempty"`
 }
 
 // SwarmConfig controls the optional multi-bot collaboration mode (Mode B).

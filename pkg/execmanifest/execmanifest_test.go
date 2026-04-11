@@ -1005,6 +1005,75 @@ func TestRawStorageShapeOfCanonicalJSON(t *testing.T) {
 
 // --- (original tests continue below) -------------------------------
 
+// TestMaxTurnEmptySessionReturnsZero exercises the zero-state:
+// a session with no recorded turns returns 0, not an error.
+func TestMaxTurnEmptySessionReturnsZero(t *testing.T) {
+	ctx := context.Background()
+	s := newTestStore(t, 1_700_000_000_000)
+
+	got, err := s.MaxTurn(ctx, "sess-empty")
+	if err != nil {
+		t.Fatalf("MaxTurn: %v", err)
+	}
+	if got != 0 {
+		t.Errorf("MaxTurn empty = %d, want 0", got)
+	}
+}
+
+// TestMaxTurnReturnsLargestRecordedTurn exercises the happy path:
+// insert turns in non-monotonic order, confirm MaxTurn returns the
+// largest.
+func TestMaxTurnReturnsLargestRecordedTurn(t *testing.T) {
+	ctx := context.Background()
+	s := newTestStore(t, 1_700_000_000_000)
+
+	const sess = "sess-max"
+	for _, turn := range []int{3, 7, 2, 5, 1} {
+		m := sampleManifest()
+		m.SessionID = sess
+		m.Turn = turn
+		if _, err := s.Begin(ctx, m); err != nil {
+			t.Fatalf("Begin turn %d: %v", turn, err)
+		}
+	}
+	got, err := s.MaxTurn(ctx, sess)
+	if err != nil {
+		t.Fatalf("MaxTurn: %v", err)
+	}
+	if got != 7 {
+		t.Errorf("MaxTurn = %d, want 7", got)
+	}
+}
+
+// TestMaxTurnRejectsEmptySessionID — a caller bug, rejected early
+// before SQL.
+func TestMaxTurnRejectsEmptySessionID(t *testing.T) {
+	ctx := context.Background()
+	s := newTestStore(t, 1_700_000_000_000)
+
+	_, err := s.MaxTurn(ctx, "")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "sessionID required") {
+		t.Errorf("err = %q", err.Error())
+	}
+}
+
+// TestMaxTurnAfterCloseReturnsErrClosed exercises the shutdown
+// fence for the new read path.
+func TestMaxTurnAfterCloseReturnsErrClosed(t *testing.T) {
+	ctx := context.Background()
+	s := newTestStore(t, 1_700_000_000_000)
+	if err := s.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	_, err := s.MaxTurn(ctx, "sess")
+	if !errors.Is(err, ErrClosed) {
+		t.Fatalf("MaxTurn after close: %v, want ErrClosed", err)
+	}
+}
+
 // TestProviderCallModelIDNullable — empty ModelID on a provider
 // call should store as SQL NULL, not the empty string, and come
 // back as empty-string on read via COALESCE.
