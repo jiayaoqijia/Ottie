@@ -32,6 +32,10 @@ func TestClassifyError_ContextDeadlineExceeded(t *testing.T) {
 }
 
 func TestClassifyError_StatusCodes(t *testing.T) {
+	// R8: 503 and 529 now map to FailoverOverloaded (distinct
+	// recovery path from 500/502 which remain FailoverTimeout).
+	// 404 now maps to FailoverModelNotFound and 413 to
+	// FailoverPayloadTooLarge per hermes alignment.
 	tests := []struct {
 		status int
 		reason FailoverReason
@@ -39,17 +43,19 @@ func TestClassifyError_StatusCodes(t *testing.T) {
 		{401, FailoverAuth},
 		{403, FailoverAuth},
 		{402, FailoverBilling},
+		{404, FailoverModelNotFound},
 		{408, FailoverTimeout},
+		{413, FailoverPayloadTooLarge},
 		{429, FailoverRateLimit},
 		{400, FailoverFormat},
 		{500, FailoverTimeout},
 		{502, FailoverTimeout},
-		{503, FailoverTimeout},
+		{503, FailoverOverloaded},
 		{521, FailoverTimeout},
 		{522, FailoverTimeout},
 		{523, FailoverTimeout},
 		{524, FailoverTimeout},
-		{529, FailoverTimeout},
+		{529, FailoverOverloaded},
 	}
 
 	for _, tt := range tests {
@@ -104,9 +110,11 @@ func TestClassifyError_OverloadedPatterns(t *testing.T) {
 			t.Errorf("pattern %q: expected non-nil", msg)
 			continue
 		}
-		// Overloaded is treated as rate_limit
-		if result.Reason != FailoverRateLimit {
-			t.Errorf("pattern %q: reason = %q, want rate_limit", msg, result.Reason)
+		// R8: overloaded is now a distinct reason, not collapsed
+		// into rate_limit. The recovery path is "backoff and retry
+		// on same provider", not "swap providers".
+		if result.Reason != FailoverOverloaded {
+			t.Errorf("pattern %q: reason = %q, want overloaded", msg, result.Reason)
 		}
 	}
 }
@@ -286,10 +294,21 @@ func TestClassifyError_CauseChain(t *testing.T) {
 }
 
 func TestClassifyError_UnknownError(t *testing.T) {
+	// R8: unclassifiable errors now return FailoverUnknown so the
+	// reason is reachable in logs and ledger rows. The fallback
+	// loop uses ShouldFallback() to skip swapping providers for
+	// unknown errors, which preserves the "don't burn credentials
+	// on mystery errors" behavior.
 	err := errors.New("some completely random error")
 	result := ClassifyError(err, "openai", "gpt-4")
-	if result != nil {
-		t.Errorf("expected nil for unknown error, got %+v", result)
+	if result == nil {
+		t.Fatal("expected FailoverUnknown classification, got nil")
+	}
+	if result.Reason != FailoverUnknown {
+		t.Errorf("reason = %q, want unknown", result.Reason)
+	}
+	if result.ShouldFallback() {
+		t.Error("FailoverUnknown should NOT trigger fallback")
 	}
 }
 

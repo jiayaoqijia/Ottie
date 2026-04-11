@@ -159,22 +159,26 @@ func (fc *FallbackChain) Execute(
 			return nil, context.Canceled
 		}
 
-		// Classify the error.
+		// Classify the error. After R8, ClassifyError always returns
+		// a *FailoverError for real errors; nil only on nil input or
+		// context.Canceled.
 		failErr := ClassifyError(err, candidate.Provider, candidate.Model)
 
 		if failErr == nil {
-			// Unclassifiable error: do not fallback, return immediately.
+			// context canceled — user aborted. Return the original
+			// error verbatim so callers can recognize it.
 			result.Attempts = append(result.Attempts, FallbackAttempt{
 				Provider: candidate.Provider,
 				Model:    candidate.Model,
 				Error:    err,
 				Duration: elapsed,
 			})
-			return nil, fmt.Errorf("fallback: unclassified error from %s/%s: %w",
-				candidate.Provider, candidate.Model, err)
+			return nil, err
 		}
 
-		// Non-retriable error: abort immediately.
+		// Non-retriable error: abort immediately. Covers format
+		// errors, model-not-found, and auth_permanent — conditions
+		// that will fail the same way on the next provider.
 		if !failErr.IsRetriable() {
 			result.Attempts = append(result.Attempts, FallbackAttempt{
 				Provider: candidate.Provider,
@@ -186,7 +190,24 @@ func (fc *FallbackChain) Execute(
 			return nil, failErr
 		}
 
-		// Retriable error: mark failure and continue to next candidate.
+		// Retriable-but-do-not-fallback: context_overflow,
+		// payload_too_large, thinking_signature, session_expired,
+		// unknown. These should be retried in place by the caller,
+		// not burned across every fallback candidate. Return the
+		// classified error so the caller can pick the recovery path
+		// from the hint methods (ShouldCompress, etc.).
+		if !failErr.ShouldFallback() {
+			result.Attempts = append(result.Attempts, FallbackAttempt{
+				Provider: candidate.Provider,
+				Model:    candidate.Model,
+				Error:    failErr,
+				Reason:   failErr.Reason,
+				Duration: elapsed,
+			})
+			return nil, failErr
+		}
+
+		// Retriable-and-fallback-eligible: mark failure and continue.
 		fc.cooldown.MarkFailure(candidate.Provider, failErr.Reason)
 		result.Attempts = append(result.Attempts, FallbackAttempt{
 			Provider: candidate.Provider,
