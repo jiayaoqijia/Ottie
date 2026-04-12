@@ -353,7 +353,9 @@ func (m *Manager) StartAll(ctx context.Context) error {
 
 	if len(m.channels) == 0 {
 		logger.WarnC("channels", "No channels enabled")
-		return errors.New("no channels enabled")
+		// Allow starting with zero external channels — the web launcher
+		// uses an internal WebSocket channel that does not appear in
+		// m.channels. Returning an error here blocks the web-only use case.
 	}
 
 	logger.InfoC("channels", "Starting all channels")

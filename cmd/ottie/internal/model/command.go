@@ -105,7 +105,7 @@ func setDefaultModel(configPath string, cfg *config.Config, modelName string) er
 	}
 
 	if !modelFound && modelName != LocalModel {
-		return fmt.Errorf("cannot found model '%s' in config", modelName)
+		return fmt.Errorf("model '%s' not found in config", modelName)
 	}
 
 	// Update the default model
