@@ -378,6 +378,133 @@ func TestHasCapUnknownReturnsFalse(t *testing.T) {
 	}
 }
 
+// TestZeroValuedPrincipalCannotPassAnyAdapter verifies that a zero-valued
+// UntypedPrincipal is rejected by every adapter, not just writes_wallet.
+// This covers the guardDispatch zero-check for all 5 capability classes.
+func TestZeroValuedPrincipalCannotPassAnyAdapter(t *testing.T) {
+	ctx := context.Background()
+	var zero UntypedPrincipal
+
+	adapters := []struct {
+		name    string
+		adapter Runnable
+	}{
+		{"read_only", AdaptReadOnly(lookupTool{}, func(raw map[string]any) (lookupArgs, error) {
+			return lookupArgs{}, nil
+		})},
+		{"writes_local", AdaptWritesLocal(writeFileTool{}, func(raw map[string]any) (writeFileArgs, error) {
+			return writeFileArgs{}, nil
+		})},
+		{"writes_state", AdaptWritesState(installSkillTool{}, func(raw map[string]any) (installSkillArgs, error) {
+			return installSkillArgs{}, nil
+		})},
+		{"writes_chain", AdaptWritesChain(castTool{}, func(raw map[string]any) (castArgs, error) {
+			return castArgs{}, nil
+		})},
+		{"writes_wallet", AdaptWritesWallet(stakeTool{}, func(raw map[string]any) (stakeArgs, error) {
+			return stakeArgs{}, nil
+		})},
+	}
+
+	for _, tc := range adapters {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := tc.adapter.RunUntyped(ctx, zero, map[string]any{})
+			if !errors.Is(err, ErrZeroPrincipal) {
+				t.Errorf("zero principal should be rejected by %s adapter: got %v, want ErrZeroPrincipal", tc.name, err)
+			}
+		})
+	}
+}
+
+// TestForgedWalletPrincipalCannotEscalate verifies that even if a caller
+// manages to construct an UntypedPrincipal with a populated agent ID,
+// it still cannot dispatch a writes_wallet tool unless it holds the
+// writes_wallet capability. This is the runtime defense-in-depth layer
+// that backs up the compile-time type system.
+func TestForgedWalletPrincipalCannotEscalate(t *testing.T) {
+	ctx := context.Background()
+
+	stakeR := AdaptWritesWallet(stakeTool{}, func(raw map[string]any) (stakeArgs, error) {
+		amt, _ := raw["amount_eth"].(float64)
+		return stakeArgs{AmountETH: amt}, nil
+	})
+
+	// A read-only principal with populated identity fields
+	roUntyped := FromReadOnly(NewReadOnly("agent-main", "user-alice", "acct-0x1", "cli"))
+	if roUntyped.IsZero() {
+		t.Fatal("read-only principal should not be zero")
+	}
+	if roUntyped.AgentID() != "agent-main" {
+		t.Fatal("read-only principal should have populated agent ID")
+	}
+
+	// Despite having a populated identity, a read-only principal
+	// must be blocked from dispatching a writes_wallet tool.
+	_, err := stakeR.RunUntyped(ctx, roUntyped, map[string]any{"amount_eth": 1.0})
+	if !errors.Is(err, ErrInsufficientCap) {
+		t.Fatalf("read-only principal with populated identity should be rejected: got %v, want ErrInsufficientCap", err)
+	}
+
+	// A writes_local principal also cannot escalate to writes_wallet.
+	localUntyped := FromWritesLocal(mintPrincipal[CapWritesLocal](t, "writes_local"))
+	_, err = stakeR.RunUntyped(ctx, localUntyped, map[string]any{"amount_eth": 1.0})
+	if !errors.Is(err, ErrInsufficientCap) {
+		t.Fatalf("writes_local principal should not escalate to writes_wallet: got %v, want ErrInsufficientCap", err)
+	}
+
+	// A writes_chain principal also cannot escalate to writes_wallet
+	// (one step below on the ladder).
+	chainUntyped := FromWritesChain(mintPrincipal[CapWritesChain](t, "writes_chain"))
+	_, err = stakeR.RunUntyped(ctx, chainUntyped, map[string]any{"amount_eth": 1.0})
+	if !errors.Is(err, ErrInsufficientCap) {
+		t.Fatalf("writes_chain principal should not escalate to writes_wallet: got %v, want ErrInsufficientCap", err)
+	}
+
+	// Only a writes_wallet principal should succeed.
+	walletUntyped := FromWritesWallet(mintPrincipal[CapWritesWallet](t, "writes_wallet"))
+	res, err := stakeR.RunUntyped(ctx, walletUntyped, map[string]any{"amount_eth": 0.5})
+	if err != nil {
+		t.Fatalf("wallet principal should succeed: %v", err)
+	}
+	if !strings.Contains(res.ForLLM, "staked 0.5000") {
+		t.Errorf("result = %q, want to contain staked amount", res.ForLLM)
+	}
+}
+
+// TestGuardDispatchErrorMessages verifies that the error messages from
+// guardDispatch include the tool name and required capability, so
+// operators can diagnose authorization failures from logs alone.
+func TestGuardDispatchErrorMessages(t *testing.T) {
+	ctx := context.Background()
+
+	stakeR := AdaptWritesWallet(stakeTool{}, func(raw map[string]any) (stakeArgs, error) {
+		return stakeArgs{}, nil
+	})
+
+	// Zero principal error should name the tool
+	var zero UntypedPrincipal
+	_, err := stakeR.RunUntyped(ctx, zero, map[string]any{})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "lido_stake") {
+		t.Errorf("zero-principal error should name the tool: %v", err)
+	}
+
+	// Insufficient cap error should name the tool and required cap
+	ro := FromReadOnly(NewReadOnly("a", "u", "ac", "ch"))
+	_, err = stakeR.RunUntyped(ctx, ro, map[string]any{})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "lido_stake") {
+		t.Errorf("insufficient-cap error should name the tool: %v", err)
+	}
+	if !strings.Contains(err.Error(), "writes_wallet") {
+		t.Errorf("insufficient-cap error should name the required cap: %v", err)
+	}
+}
+
 // mintPrincipal is a generic test helper that runs a read-only
 // principal through the gate of the requested effect class.
 func mintPrincipal[C Capability](t *testing.T, effect string) PrincipalContext[C] {

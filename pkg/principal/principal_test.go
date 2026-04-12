@@ -283,6 +283,40 @@ func TestExpiryBoundaryAtExactNow(t *testing.T) {
 	}
 }
 
+// TestSerializePrincipalLabelWithSpecialCharacters verifies that
+// principal labels with ; or = in field values produce labels that
+// can be distinguished from labels with different field assignments.
+// This documents the current unescaped behavior as a known limitation.
+func TestSerializePrincipalLabelWithSpecialCharacters(t *testing.T) {
+	// A user scope containing ";" creates an ambiguous label.
+	// The legitimate principal:
+	legit := NewReadOnly("agent-main", "alice", "acct-0x1", "cli")
+	legitLabel := Label(legit)
+
+	// An attacker who controls userScope tries to impersonate:
+	attacker := NewReadOnly("agent-main", "alice;account=acct-0x1;channel=evil", "", "")
+	attackerLabel := Label(attacker)
+
+	// These labels MUST be different even though a naive parser
+	// might extract the same agent= and user= prefix from both.
+	if legitLabel == attackerLabel {
+		t.Fatalf("labels must differ:\n  legit:    %q\n  attacker: %q", legitLabel, attackerLabel)
+	}
+
+	// Verify the label format contains the raw special characters
+	// (documenting current behavior — no escaping).
+	if !strings.Contains(attackerLabel, ";account=acct-0x1;channel=evil") {
+		t.Errorf("attacker label should contain injected fields: %q", attackerLabel)
+	}
+
+	// An "=" in the agent ID should not split the field.
+	eqAgent := NewReadOnly("agent=evil", "user", "acct", "ch")
+	eqLabel := Label(eqAgent)
+	if !strings.Contains(eqLabel, "agent=agent=evil;") {
+		t.Errorf("agent with = should appear literally: %q", eqLabel)
+	}
+}
+
 type stubVerifier struct {
 	verifyResult error
 	seen         SignedConsent

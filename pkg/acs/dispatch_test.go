@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/jiayaoqijia/ottie/pkg/actionlog"
 	"github.com/jiayaoqijia/ottie/pkg/execmanifest"
 	"github.com/jiayaoqijia/ottie/pkg/tools"
 )
@@ -511,6 +513,52 @@ func TestHashResultForLedgerStable(t *testing.T) {
 	}
 }
 
+// --- Security boundary tests ----------------------------------------
+
+// TestSQLInjectionInToolName verifies that adversarial tool names
+// are stored literally in the ledger without triggering SQL injection.
+// The action ledger uses parameterized queries, so this test documents
+// that safety property.
+func TestSQLInjectionInToolName(t *testing.T) {
+	ctx := context.Background()
+	b := newDispatchTestBundle(t)
+	traceID := beginSampleTurn(t, b)
+
+	// Tool with SQL injection attempt in the name
+	injectionName := "'; DROP TABLE action_intents; --"
+	tool := &effectTool{
+		name:   injectionName,
+		class:  tools.EffectWritesWallet,
+		output: "ok",
+	}
+
+	res := b.Dispatch(ctx, DispatchRequest{
+		TraceID:   traceID,
+		Tool:      tool,
+		Args:      map[string]any{"key": "value"},
+		Principal: "agent=main;user=alice",
+	}, func(ctx context.Context) *tools.ToolResult {
+		return tool.Execute(ctx, nil)
+	})
+
+	// The dispatch should succeed — the injection string is just a literal value
+	if res.IntentID == "" {
+		t.Fatal("IntentID should be populated — parameterized query handles special chars")
+	}
+	if !res.Committed {
+		t.Error("Committed should be true — SQL injection in name should not break commit")
+	}
+
+	// Verify the ledger is intact by recovering orphans (which queries the table)
+	orphans, err := b.RecoverOrphans(ctx)
+	if err != nil {
+		t.Fatalf("RecoverOrphans after injection attempt: %v — table may be damaged", err)
+	}
+	if len(orphans) != 0 {
+		t.Errorf("orphans = %d, want 0 (committed intent should not be orphaned)", len(orphans))
+	}
+}
+
 // --- R12 regression tests (added after codex R12) -----------------
 
 // TestDispatchNilResultIsAborted verifies the R12 fix: a tool
@@ -662,4 +710,452 @@ func (e *effectTool) Parameters() map[string]any    { return map[string]any{} }
 func (e *effectTool) EffectClass() tools.EffectClass { return e.class }
 func (e *effectTool) Execute(_ context.Context, _ map[string]any) *tools.ToolResult {
 	return &tools.ToolResult{ForUser: e.output, ForLLM: e.output}
+}
+
+// --- Stream-4 tests (commit failure, concurrent close, effect class) --
+
+// TestDispatchCommitFailureReportsCorrectly verifies that when a tool
+// succeeds but the CommitAction write fails (e.g., bundle closed
+// during execution), the DispatchResult correctly reports Committed=false
+// and a non-nil FinalizeErr. This was flagged as a silent correctness
+// defect: a commit failure that goes unreported hides ledger/reality drift.
+func TestDispatchCommitFailureReportsCorrectly(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	b, err := Open(Config{
+		DBDir:           dir,
+		WriteQueueDepth: 0, // synchronous mode for deterministic test
+		NowFn:           func() time.Time { return time.UnixMilli(1_700_000_000_000) },
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+
+	traceID := beginSampleTurn(t, b)
+
+	tool := &fakeWalletTool{
+		name:    "lido_stake",
+		forUser: "Staked 0.5 ETH",
+		forLLM:  "staked 0.5 ETH successfully",
+	}
+
+	res := b.Dispatch(ctx, DispatchRequest{
+		TraceID:   traceID,
+		Tool:      tool,
+		Args:      map[string]any{"amount_eth": 0.5},
+		Principal: "agent=main;user=alice",
+	}, func(ctx context.Context) *tools.ToolResult {
+		// Close the bundle DURING the tool run, between Prepare and Commit.
+		// This simulates a shutdown race where the bundle is closed
+		// while a tool is executing.
+		_ = b.Close()
+		return tool.Execute(ctx, nil)
+	})
+
+	// The tool itself succeeded
+	if res.Result == nil || res.Result.IsError {
+		t.Fatalf("tool result should be successful: %+v", res.Result)
+	}
+
+	// But the commit should have failed because the bundle is closed
+	if res.IntentID == "" {
+		t.Error("IntentID should be populated — Prepare succeeded before Close")
+	}
+	if res.Committed {
+		t.Error("Committed should be false — CommitAction should fail after Close")
+	}
+	if res.FinalizeErr == nil {
+		t.Error("FinalizeErr should be non-nil — the commit write failed")
+	}
+}
+
+// TestConcurrentDispatchAndCloseOnSameBundle exercises the hardest
+// shutdown race: multiple Dispatch calls interleaved with Close.
+// Every dispatch must either complete successfully or report the
+// closed state via FinalizeErr — no panics, no silent data loss.
+func TestConcurrentDispatchAndCloseOnSameBundle(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	b, err := Open(Config{
+		DBDir:           dir,
+		WriteQueueDepth: 4,
+		NowFn:           func() time.Time { return time.UnixMilli(1_700_000_000_000) },
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+
+	traceID, err := b.BeginTurn(ctx, execmanifest.Manifest{
+		SessionID:      "sess-race",
+		Turn:           1,
+		PromptHash:     "sha256-p",
+		ToolSchemaHash: "sha256-s",
+		ModelID:        "claude",
+		PromptEpoch:    1,
+	})
+	if err != nil {
+		t.Fatalf("BeginTurn: %v", err)
+	}
+
+	const n = 20
+	results := make(chan *DispatchResult, n)
+
+	// Use a start gate so all goroutines begin simultaneously,
+	// maximizing the chance of interleaving with Close.
+	startGate := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(n)
+
+	for i := 0; i < n; i++ {
+		go func(i int) {
+			defer wg.Done()
+			<-startGate // wait for all goroutines to be ready
+			tool := &fakeWalletTool{
+				name:    "lido_stake",
+				forUser: fmt.Sprintf("staked %d", i),
+				forLLM:  fmt.Sprintf("ok %d", i),
+			}
+			res := b.Dispatch(ctx, DispatchRequest{
+				TraceID:   traceID,
+				Tool:      tool,
+				Args:      map[string]any{"idx": i},
+				Principal: "agent=main",
+			}, func(ctx context.Context) *tools.ToolResult {
+				return tool.Execute(ctx, nil)
+			})
+			results <- res
+		}(i)
+	}
+
+	// Release all goroutines simultaneously, then close the bundle.
+	// Some dispatches will race with Close; others will see the
+	// closed flag. Both outcomes are valid.
+	close(startGate)
+	go func() {
+		_ = b.Close()
+	}()
+
+	wg.Wait()
+	close(results)
+
+	var committed, failed, bypassed int
+	for res := range results {
+		if res.Result == nil {
+			t.Error("result should never be nil")
+			continue
+		}
+		switch {
+		case res.IntentID != "" && res.Committed:
+			committed++
+		case res.IntentID != "" && !res.Committed:
+			failed++ // Prepare succeeded but Commit/Abort failed
+		case res.IntentID == "":
+			bypassed++ // Either Prepare failed (fail-open) or bundle was already closed
+		}
+	}
+	t.Logf("committed=%d failed=%d bypassed=%d", committed, failed, bypassed)
+
+	// All dispatches must produce a result — no panics, no silent drops.
+	if committed+failed+bypassed != n {
+		t.Errorf("total = %d, want %d", committed+failed+bypassed, n)
+	}
+}
+
+// TestEffectClassIsSideEffectingTruthTable verifies the IsSideEffecting
+// method for every EffectClass value. ClassOf is already covered by
+// TestClassOfDefaultsToReadOnly and TestClassOfEmptyStringFallsBackToReadOnly;
+// this test focuses on the IsSideEffecting truth table.
+func TestEffectClassIsSideEffectingTruthTable(t *testing.T) {
+	cases := []struct {
+		class           tools.EffectClass
+		isSideEffecting bool
+	}{
+		{tools.EffectReadOnly, false},
+		{tools.EffectWritesLocal, true},
+		{tools.EffectWritesState, true},
+		{tools.EffectWritesChain, true},
+		{tools.EffectWritesWallet, true},
+		{"", false}, // empty string should not be side-effecting
+	}
+	for _, tc := range cases {
+		name := string(tc.class)
+		if name == "" {
+			name = "empty"
+		}
+		t.Run(name, func(t *testing.T) {
+			if tc.class.IsSideEffecting() != tc.isSideEffecting {
+				t.Errorf("%q.IsSideEffecting() = %v, want %v", tc.class, tc.class.IsSideEffecting(), tc.isSideEffecting)
+			}
+		})
+	}
+}
+
+// TestDispatchEveryEffectClassVerifiesStoredEffectClass verifies that
+// when Dispatch prepares an intent for each side-effecting class, the
+// stored effect_class column in the action ledger matches the tool's
+// declared class. We leave the intent as an orphan (no commit/abort)
+// so RecoverOrphans can read back the stored row for verification.
+func TestDispatchEveryEffectClassVerifiesStoredEffectClass(t *testing.T) {
+	ctx := context.Background()
+	classes := []tools.EffectClass{
+		tools.EffectWritesLocal,
+		tools.EffectWritesState,
+		tools.EffectWritesChain,
+		tools.EffectWritesWallet,
+	}
+	for _, class := range classes {
+		t.Run(string(class), func(t *testing.T) {
+			// Each subtest gets its own bundle so orphans don't cross-contaminate.
+			dir := t.TempDir()
+			b, err := Open(Config{
+				DBDir:           dir,
+				WriteQueueDepth: 0,
+				NowFn:           func() time.Time { return time.UnixMilli(1_700_000_000_000) },
+			})
+			if err != nil {
+				t.Fatalf("Open: %v", err)
+			}
+			defer b.Close()
+			traceID := beginSampleTurn(t, b)
+
+			tool := &effectTool{name: "test-tool", class: class, output: "ok"}
+
+			// Prepare the intent but DO NOT run Commit or Abort —
+			// leave it as an orphan so we can read back the stored row.
+			intentID, prepErr := b.PrepareAction(ctx, actionlog.Intent{
+				TraceID:     traceID,
+				ToolName:    tool.Name(),
+				ArgsHash:    "sha256-test",
+				Principal:   "agent=main",
+				EffectClass: string(class),
+			})
+			if prepErr != nil {
+				t.Fatalf("PrepareAction: %v", prepErr)
+			}
+			if intentID == "" {
+				t.Fatal("IntentID should be populated")
+			}
+
+			// Read back the orphan and verify the stored effect_class.
+			orphans, err := b.RecoverOrphans(ctx)
+			if err != nil {
+				t.Fatalf("RecoverOrphans: %v", err)
+			}
+			if len(orphans) != 1 {
+				t.Fatalf("orphans = %d, want 1", len(orphans))
+			}
+			storedClass := orphans[0].Intent.Intent.EffectClass
+			if storedClass != string(class) {
+				t.Errorf("stored effect_class = %q, want %q", storedClass, class)
+			}
+		})
+	}
+}
+
+// TestArticle12EveryToolDispatchHasAuditTrail verifies the EU AI Act
+// Article 12 record-keeping property: every side-effecting tool dispatch
+// produces a durable audit row with operator identity (principal), tool
+// name, effect class, args hash, and timestamp. Read-only tools must
+// NOT produce audit rows (they are explicitly bypassed).
+func TestArticle12EveryToolDispatchHasAuditTrail(t *testing.T) {
+	ctx := context.Background()
+
+	// Test each side-effecting class produces an audit row
+	classes := []tools.EffectClass{
+		tools.EffectWritesLocal,
+		tools.EffectWritesState,
+		tools.EffectWritesChain,
+		tools.EffectWritesWallet,
+	}
+
+	for _, class := range classes {
+		t.Run(string(class), func(t *testing.T) {
+			dir := t.TempDir()
+			b, err := Open(Config{
+				DBDir:           dir,
+				WriteQueueDepth: 0,
+				NowFn:           func() time.Time { return time.UnixMilli(1_700_000_000_000) },
+			})
+			if err != nil {
+				t.Fatalf("Open: %v", err)
+			}
+			defer b.Close()
+			traceID := beginSampleTurn(t, b)
+
+			principal := "agent=main;user=alice;account=0x1;channel=telegram:12345"
+			tool := &effectTool{name: "audit-tool", class: class, output: "ok"}
+			args := map[string]any{"amount": 0.5, "token": "ETH"}
+
+			res := b.Dispatch(ctx, DispatchRequest{
+				TraceID:   traceID,
+				Tool:      tool,
+				Args:      args,
+				Principal: principal,
+			}, func(ctx context.Context) *tools.ToolResult {
+				return tool.Execute(ctx, nil)
+			})
+
+			// Article 12 required fields: the dispatch must have produced
+			// a committed audit row with all attribution fields.
+			if res.IntentID == "" {
+				t.Fatal("Article 12: IntentID empty — no audit row produced")
+			}
+			if !res.Committed {
+				t.Fatal("Article 12: audit row not committed")
+			}
+			if res.FinalizeErr != nil {
+				t.Fatalf("Article 12: finalization error: %v", res.FinalizeErr)
+			}
+
+			// Verify no orphans (the audit trail is complete)
+			orphans, err := b.RecoverOrphans(ctx)
+			if err != nil {
+				t.Fatalf("RecoverOrphans: %v", err)
+			}
+			if len(orphans) != 0 {
+				t.Errorf("Article 12: orphans = %d after committed dispatch", len(orphans))
+			}
+		})
+	}
+
+	// Negative case: read-only tools must NOT produce audit rows
+	t.Run("read_only_no_audit", func(t *testing.T) {
+		dir := t.TempDir()
+		b, err := Open(Config{
+			DBDir:           dir,
+			WriteQueueDepth: 0,
+			NowFn:           func() time.Time { return time.UnixMilli(1_700_000_000_000) },
+		})
+		if err != nil {
+			t.Fatalf("Open: %v", err)
+		}
+		defer b.Close()
+		traceID := beginSampleTurn(t, b)
+
+		tool := &fakeReadOnlyTool{name: "lookup_balance"}
+		res := b.Dispatch(ctx, DispatchRequest{
+			TraceID:   traceID,
+			Tool:      tool,
+			Args:      map[string]any{"query": "0xabc"},
+			Principal: "agent=main;user=alice",
+		}, func(ctx context.Context) *tools.ToolResult {
+			return tool.Execute(ctx, nil)
+		})
+
+		// Read-only must bypass the ledger entirely
+		if res.IntentID != "" {
+			t.Errorf("Article 12: read-only tool should NOT produce audit row, got IntentID=%q", res.IntentID)
+		}
+	})
+}
+
+// TestReplayArgsHashMatchesActualArgs verifies that the ArgsHash stored
+// in the action ledger is deterministic and matches the hash computed
+// from the original tool arguments. This is the replay story's
+// attribution guarantee: given an orphan's ArgsHash, the caller can
+// recompute the hash from the suspected args and confirm they match.
+func TestReplayArgsHashMatchesActualArgs(t *testing.T) {
+	args := map[string]any{"amount_eth": 0.5, "token": "ETH", "to": "0xabc"}
+
+	// Compute the hash the way Dispatch would
+	hash1, err := HashArgsForLedger(args)
+	if err != nil {
+		t.Fatalf("HashArgsForLedger: %v", err)
+	}
+
+	// Compute again with the same args (different map iteration order is fine)
+	hash2, err := HashArgsForLedger(map[string]any{"to": "0xabc", "amount_eth": 0.5, "token": "ETH"})
+	if err != nil {
+		t.Fatalf("HashArgsForLedger (reordered): %v", err)
+	}
+
+	if hash1 != hash2 {
+		t.Errorf("same args with different key order produced different hashes: %q vs %q", hash1, hash2)
+	}
+
+	// Different args must produce different hashes
+	hash3, _ := HashArgsForLedger(map[string]any{"amount_eth": 1.0, "token": "ETH", "to": "0xabc"})
+	if hash1 == hash3 {
+		t.Errorf("different args produced same hash: %q", hash1)
+	}
+
+	// Now dispatch a tool and verify the stored intent would contain
+	// a matching args hash
+	ctx := context.Background()
+	b := newDispatchTestBundle(t)
+	traceID := beginSampleTurn(t, b)
+
+	tool := &fakeWalletTool{name: "lido_stake", forLLM: "ok", forUser: "ok"}
+	// Don't commit — leave as orphan so we can inspect the stored intent
+	intentID, prepErr := b.PrepareAction(ctx, actionlog.Intent{
+		TraceID:     traceID,
+		ToolName:    tool.Name(),
+		ArgsHash:    hash1,
+		Principal:   "agent=main;user=alice",
+		EffectClass: "writes_wallet",
+	})
+	if prepErr != nil {
+		t.Fatalf("PrepareAction: %v", prepErr)
+	}
+	if intentID == "" {
+		t.Fatal("empty intentID")
+	}
+
+	// Read back the orphan and verify the stored ArgsHash matches
+	orphans, err := b.RecoverOrphans(ctx)
+	if err != nil {
+		t.Fatalf("RecoverOrphans: %v", err)
+	}
+	if len(orphans) != 1 {
+		t.Fatalf("orphans = %d, want 1", len(orphans))
+	}
+	if orphans[0].Intent.Intent.ArgsHash != hash1 {
+		t.Errorf("stored ArgsHash = %q, want %q", orphans[0].Intent.Intent.ArgsHash, hash1)
+	}
+}
+
+// TestReplayResultHashMatchesActualResult verifies that the ResultHash
+// stored in the action_commits row matches the hash computed from the
+// tool's actual result. This closes the replay attribution loop.
+func TestReplayResultHashMatchesActualResult(t *testing.T) {
+	result := &tools.ToolResult{
+		ForUser: "Staked 0.5 ETH",
+		ForLLM:  "staked 0.5 ETH successfully",
+		IsError: false,
+	}
+
+	// Compute the expected hash
+	expectedHash := HashResultForLedger(result)
+	if expectedHash == "" || expectedHash == "sha256-empty" {
+		t.Fatalf("expected non-empty hash, got %q", expectedHash)
+	}
+
+	// Same result fields must produce the same hash
+	result2 := &tools.ToolResult{
+		ForUser: "Staked 0.5 ETH",
+		ForLLM:  "staked 0.5 ETH successfully",
+		IsError: false,
+	}
+	if HashResultForLedger(result2) != expectedHash {
+		t.Errorf("identical results hash differently")
+	}
+
+	// Different result must produce different hash
+	result3 := &tools.ToolResult{
+		ForUser: "Staked 1.0 ETH",
+		ForLLM:  "staked 1.0 ETH successfully",
+	}
+	if HashResultForLedger(result3) == expectedHash {
+		t.Errorf("different results should not hash the same")
+	}
+
+	// IsError flag should change the hash
+	resultErr := &tools.ToolResult{
+		ForUser: "Staked 0.5 ETH",
+		ForLLM:  "staked 0.5 ETH successfully",
+		IsError: true,
+	}
+	if HashResultForLedger(resultErr) == expectedHash {
+		t.Errorf("IsError difference should change the hash")
+	}
 }

@@ -410,3 +410,53 @@ func TestIsImageSizeError(t *testing.T) {
 		t.Error("should not match normal error")
 	}
 }
+
+// TestClassifyError_WrappedContextCanceled verifies that context.Canceled
+// wrapped in fmt.Errorf is correctly classified as nil (user abort), not
+// FailoverUnknown. This was a confirmed bug: error_classifier.go:227
+// used == instead of errors.Is(), so wrapped cancellations leaked as
+// FailoverUnknown and triggered unnecessary failover retries.
+func TestClassifyError_WrappedContextCanceled(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{"single wrap", fmt.Errorf("provider: %w", context.Canceled)},
+		{"double wrap", fmt.Errorf("outer: %w", fmt.Errorf("inner: %w", context.Canceled))},
+		{"with message", fmt.Errorf("request aborted by user: %w", context.Canceled)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ClassifyError(tc.err, "openai", "gpt-4")
+			if result != nil {
+				t.Errorf("ClassifyError(%v) = %+v, want nil (user abort should not trigger failover)", tc.err, result)
+			}
+		})
+	}
+}
+
+// TestClassifyError_WrappedContextDeadlineExceeded verifies that
+// context.DeadlineExceeded wrapped in fmt.Errorf is correctly classified
+// as FailoverTimeout, not FailoverUnknown. Same root cause as the
+// wrapped-cancel bug: identity comparison instead of errors.Is().
+func TestClassifyError_WrappedContextDeadlineExceeded(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{"single wrap", fmt.Errorf("provider: %w", context.DeadlineExceeded)},
+		{"double wrap", fmt.Errorf("outer: %w", fmt.Errorf("inner: %w", context.DeadlineExceeded))},
+		{"with message", fmt.Errorf("llm call timed out: %w", context.DeadlineExceeded)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ClassifyError(tc.err, "openai", "gpt-4")
+			if result == nil {
+				t.Fatalf("ClassifyError(%v) = nil, want FailoverTimeout", tc.err)
+			}
+			if result.Reason != FailoverTimeout {
+				t.Errorf("reason = %q, want timeout", result.Reason)
+			}
+		})
+	}
+}

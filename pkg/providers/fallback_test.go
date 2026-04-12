@@ -3,8 +3,12 @@ package providers
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/jiayaoqijia/ottie/pkg/providers/openai_compat"
 )
 
 func makeCandidate(provider, model string) FallbackCandidate {
@@ -539,4 +543,66 @@ func TestFallbackExhaustedError_Message(t *testing.T) {
 	if msg == "" {
 		t.Error("expected non-empty error message")
 	}
+}
+
+// TestFallbackChainShouldFallbackWiring verifies that when the primary
+// model fails with a retriable error, the fallback chain tries the next
+// candidate and records both attempts in the metadata.
+func TestFallbackChainShouldFallbackWiring(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cooldown := NewCooldownTracker()
+	chain := NewFallbackChain(cooldown)
+
+	candidates := []FallbackCandidate{
+		{Provider: "primary", Model: "nonexistent-model-will-fail"},
+		{Provider: "altllm", Model: "altllm-basic"},
+	}
+
+	apiKey := os.Getenv("ALTLLM_API_KEY")
+	if apiKey == "" {
+		t.Skip("ALTLLM_API_KEY not set — skipping live fallback test")
+	}
+
+	callCount := 0
+	result, err := chain.Execute(ctx, candidates, func(ctx context.Context, provider, model string) (*LLMResponse, error) {
+		callCount++
+		if model == "nonexistent-model-will-fail" {
+			// Simulate the primary failing with a retriable error
+			return nil, fmt.Errorf("status: 429 rate limit exceeded")
+		}
+		// Real call to ALTLLM for the fallback
+		p := openai_compat.NewProvider(apiKey, "https://api.altllm.ai/v1", "")
+		return p.Chat(ctx, []openai_compat.Message{
+			{Role: "user", Content: "Say 'fallback success'"},
+		}, nil, model, map[string]any{"max_tokens": 20})
+	})
+
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if result.Response == nil || result.Response.Content == "" {
+		t.Fatal("expected non-empty response from fallback")
+	}
+	t.Logf("fallback response: %q", result.Response.Content)
+
+	// The fallback should have used the second candidate
+	if result.Model != "altllm-basic" {
+		t.Errorf("result.Model = %q, want altllm-basic", result.Model)
+	}
+
+	// At least 1 failed attempt should be recorded
+	if len(result.Attempts) == 0 {
+		t.Error("expected at least 1 failed attempt before success")
+	}
+	if callCount < 2 {
+		t.Errorf("callCount = %d, want >= 2 (primary fail + fallback success)", callCount)
+	}
+
+	t.Logf("attempts: %d, final model: %s", len(result.Attempts), result.Model)
 }

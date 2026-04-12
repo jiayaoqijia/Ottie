@@ -874,7 +874,7 @@ func (al *AgentLoop) ProcessDirectWithChannel(
 
 	msg := bus.InboundMessage{
 		Channel:    channel,
-		SenderID:   "cron",
+		SenderID:   "user",
 		ChatID:     chatID,
 		Content:    content,
 		SessionKey: sessionKey,
