@@ -74,8 +74,9 @@ func NewCronService(storePath string, onJob JobHandler) *CronService {
 		onJob:     onJob,
 		gronx:     gronx.New(),
 	}
-	// Initialize and load store on creation
-	cs.loadStore()
+	// Load store eagerly for CLI commands (list, add, remove) that
+	// don't call Start(). Start() will reload authoritatively.
+	_ = cs.loadStore()
 	return cs
 }
 

@@ -627,8 +627,12 @@ type whitelistFs struct {
 }
 
 func (w *whitelistFs) matches(path string) bool {
+	// Canonicalize the path before matching to prevent traversal attacks
+	// like "/whitelisted/../../../etc/shadow" matching a whitelist pattern
+	// for "/whitelisted/" but resolving outside it via hostFs.
+	clean := filepath.Clean(path)
 	for _, p := range w.patterns {
-		if p.MatchString(path) {
+		if p.MatchString(clean) {
 			return true
 		}
 	}
