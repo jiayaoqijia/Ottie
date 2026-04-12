@@ -2500,14 +2500,3 @@ func hashMessagesForACS(messages []providers.Message) string {
 	return fmt.Sprintf("fnv1a-%016x", h)
 }
 
-// acsTurnNumber returns a monotonic turn counter for a given
-// session. Uses the session history length as a proxy; the true
-// turn number is hard to derive without threading an atomic
-// counter through, which is out of scope for the R11 wiring.
-func acsTurnNumber(agent *AgentInstance, sessionKey string) int {
-	if agent == nil || agent.Sessions == nil {
-		return 0
-	}
-	history := agent.Sessions.GetHistory(sessionKey)
-	return len(history)
-}

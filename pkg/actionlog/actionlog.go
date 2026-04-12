@@ -46,6 +46,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"sync"
 	"time"
@@ -394,8 +395,20 @@ func (l *Ledger) doPrepare(in *Intent) writeResult {
 	if err != nil {
 		return writeResult{err: fmt.Errorf("actionlog: Prepare: insert: %w", err)}
 	}
+	// Checkpoint flushes the WAL to the main DB file. If it
+	// fails, the row IS still committed in the WAL and visible
+	// to readers in the same process — the checkpoint is a
+	// durability optimization, not a visibility gate. We log the
+	// failure but return the intent_id as success so the caller
+	// can finalize the row normally instead of stranding a
+	// permanent orphan. Codex R12 flagged the previous behavior
+	// (returning the checkpoint error) as a load-bearing defect:
+	// when Dispatch got an error from Prepare it had no
+	// intent_id to pass to Commit/Abort, leaving the persisted
+	// row as an un-finalizable orphan forever.
 	if err := l.checkpoint(); err != nil {
-		return writeResult{err: fmt.Errorf("actionlog: Prepare: checkpoint: %w", err)}
+		slog.Warn("actionlog: Prepare: checkpoint failed (row is committed in WAL)",
+			"intent_id", id, "error", err.Error())
 	}
 	return writeResult{id: id}
 }
@@ -429,7 +442,8 @@ func (l *Ledger) doCommit(c *Commit) writeResult {
 		return writeResult{err: wrapFinalizationError(err, "Commit")}
 	}
 	if err := l.checkpoint(); err != nil {
-		return writeResult{err: fmt.Errorf("actionlog: Commit: checkpoint: %w", err)}
+		slog.Warn("actionlog: Commit: checkpoint failed (row is committed in WAL)",
+			"commit_id", id, "intent_id", c.IntentID, "error", err.Error())
 	}
 	return writeResult{id: id}
 }
@@ -459,7 +473,8 @@ func (l *Ledger) doAbort(a *Abort) writeResult {
 		return writeResult{err: wrapFinalizationError(err, "Abort")}
 	}
 	if err := l.checkpoint(); err != nil {
-		return writeResult{err: fmt.Errorf("actionlog: Abort: checkpoint: %w", err)}
+		slog.Warn("actionlog: Abort: checkpoint failed (row is committed in WAL)",
+			"commit_id", id, "intent_id", a.IntentID, "error", err.Error())
 	}
 	return writeResult{id: id}
 }

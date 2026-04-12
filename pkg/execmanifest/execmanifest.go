@@ -55,6 +55,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"sync"
 	"time"
@@ -380,7 +381,8 @@ func (s *Store) doBegin(m *Manifest) writeResult {
 		return writeResult{err: wrapBeginError(err)}
 	}
 	if err := s.checkpoint(); err != nil {
-		return writeResult{err: fmt.Errorf("execmanifest: Begin: checkpoint: %w", err)}
+		slog.Warn("execmanifest: Begin: checkpoint failed (row is committed in WAL)",
+			"trace_id", id, "error", err.Error())
 	}
 	return writeResult{id: id}
 }
@@ -412,7 +414,8 @@ func (s *Store) doRecordCall(c *ProviderCall) writeResult {
 		return writeResult{err: wrapRecordCallError(err)}
 	}
 	if err := s.checkpoint(); err != nil {
-		return writeResult{err: fmt.Errorf("execmanifest: RecordProviderCall: checkpoint: %w", err)}
+		slog.Warn("execmanifest: RecordProviderCall: checkpoint failed (row is committed in WAL)",
+			"trace_id", c.TraceID, "call_seq", c.CallSeq, "error", err.Error())
 	}
 	return writeResult{}
 }
