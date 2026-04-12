@@ -165,6 +165,12 @@ func (si *SkillInstaller) getGithubDirAllFiles(ctx context.Context, apiURL, loca
 	}
 
 	for _, item := range items {
+		// Sanitize item.Name from the GitHub API response to prevent
+		// path traversal. A malicious repo could return names like
+		// "../../.bashrc" to write outside the skill directory.
+		if strings.Contains(item.Name, "..") || strings.Contains(item.Name, "/") || strings.Contains(item.Name, "\\") {
+			continue
+		}
 		localPath := filepath.Join(localDir, item.Name)
 
 		switch item.Type {
