@@ -180,7 +180,9 @@ func (c *OneBotChannel) Start(ctx context.Context) error {
 }
 
 func (c *OneBotChannel) connect() error {
-	dialer := websocket.DefaultDialer
+	// Copy the default dialer instead of mutating the shared package-level
+	// pointer — concurrent connect() calls would race on HandshakeTimeout.
+	dialer := *websocket.DefaultDialer
 	dialer.HandshakeTimeout = 10 * time.Second
 
 	header := make(map[string][]string)

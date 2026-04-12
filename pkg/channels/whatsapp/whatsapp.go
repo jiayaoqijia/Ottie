@@ -53,7 +53,9 @@ func (c *WhatsAppChannel) Start(ctx context.Context) error {
 
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
-	dialer := websocket.DefaultDialer
+	// Copy the default dialer instead of mutating the shared package-level
+	// pointer — concurrent Start() calls would race on HandshakeTimeout.
+	dialer := *websocket.DefaultDialer
 	dialer.HandshakeTimeout = 10 * time.Second
 
 	conn, resp, err := dialer.Dial(c.url, nil)

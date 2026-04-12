@@ -552,7 +552,8 @@ func (c *WeComAIBotChannel) handleTextMessage(
 			"msgid":        msg.MsgID,
 			"aibotid":      msg.AIBotID,
 			"stream_id":    streamID,
-			"response_url": msg.ResponseURL,
+			// response_url excluded — it's a signed single-use credential
+			// that should not leak to logs or tracing backends.
 		}
 		c.HandleMessage(task.ctx, peer, msg.MsgID, userID, chatID,
 			content, nil, metadata, sender)
