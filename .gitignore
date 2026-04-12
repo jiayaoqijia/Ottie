@@ -68,8 +68,8 @@ dist/
 !web/backend/dist/
 web/backend/dist/*
 !web/backend/dist/.gitkeep
-CLAUDE.md
-AGENTS.md
+# CLAUDE.md and AGENTS.md are committed — they index design docs
+# and provide instructions for AI agents working on the codebase.
 
 # Demo recordings (large video files)
 demos/videos/

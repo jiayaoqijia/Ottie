@@ -27,21 +27,48 @@ builds:
       - arm64
     main: ./cmd/ottie
 
-dockers_v2:
-  - id: ottie
+dockers:
+  - id: ottie-amd64
+    goos: linux
+    goarch: amd64
     dockerfile: docker/Dockerfile.goreleaser
     extra_files:
       - docker/entrypoint.sh
     ids:
       - ottie
-    images:
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie"
-    tags:
-      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly{{ else }}{{ .Tag }}{{ end }}'
-      - '{{ if isEnvSet "NIGHTLY_BUILD" }}nightly{{ else }}latest{{ end }}'
-    platforms:
-      - linux/amd64
-      - linux/arm64
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+
+  - id: ottie-arm64
+    goos: linux
+    goarch: arm64
+    dockerfile: docker/Dockerfile.goreleaser
+    extra_files:
+      - docker/entrypoint.sh
+    ids:
+      - ottie
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+
+docker_manifests:
+  - name_template: "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:latest"
+    skip_push: '{{ isEnvSet "NIGHTLY_BUILD" }}'
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:nightly"
+    skip_push: '{{ not (isEnvSet "NIGHTLY_BUILD") }}'
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/ottie:{{ .Tag }}-arm64"
 
 archives:
   - formats: [tar.gz]

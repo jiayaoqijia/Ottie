@@ -1,10 +1,8 @@
 FROM alpine:3.21
 
-ARG TARGETPLATFORM
-
 RUN apk add --no-cache ca-certificates tzdata
 
-COPY $TARGETPLATFORM/ottie /usr/local/bin/ottie
+COPY ottie /usr/local/bin/ottie
 COPY docker/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
