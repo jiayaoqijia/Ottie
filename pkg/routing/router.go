@@ -65,7 +65,7 @@ func (r *Router) SelectModel(
 ) (model string, usedLight bool, score float64) {
 	features := ExtractFeatures(msg, history)
 	score = r.classifier.Score(features)
-	if score < r.cfg.Threshold {
+	if score < r.cfg.Threshold && r.cfg.LightModel != "" {
 		return r.cfg.LightModel, true, score
 	}
 	return primaryModel, false, score

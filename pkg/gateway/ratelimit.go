@@ -84,9 +84,17 @@ func (rl *RateLimiter) Allow(scope, ip string) bool {
 	return true
 }
 
-// Stop stops the background prune goroutine.
+// Stop stops the background prune goroutine. Safe to call multiple
+// times — subsequent calls are no-ops.
 func (rl *RateLimiter) Stop() {
-	close(rl.stopCh)
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	select {
+	case <-rl.stopCh:
+		// Already closed
+	default:
+		close(rl.stopCh)
+	}
 }
 
 func (rl *RateLimiter) pruneLoop() {
