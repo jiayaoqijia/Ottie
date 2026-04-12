@@ -148,8 +148,12 @@ func (c Config) MarshalJSON() ([]byte, error) {
 		aux.Providers = &c.Providers
 	}
 
-	// Only include session if not empty
-	if c.Session.DMScope != "" || len(c.Session.IdentityLinks) > 0 {
+	// Only include session if any field has a non-zero value.
+	// Previously only checked DMScope/IdentityLinks, silently dropping
+	// Archive and DebounceMs when those sentinel fields were empty.
+	if c.Session.DMScope != "" || len(c.Session.IdentityLinks) > 0 ||
+		c.Session.DebounceMs > 0 || c.Session.Archive.ArchiveDir != "" ||
+		c.Session.Archive.ArchiveAfterDays > 0 {
 		aux.Session = &c.Session
 	}
 

@@ -161,16 +161,20 @@ func (m *Manager) preSend(ctx context.Context, name string, msg bus.OutboundMess
 		}
 	}
 
-	// 3. Try editing placeholder
-	if v, loaded := m.placeholders.LoadAndDelete(key); loaded {
+	// 3. Try editing placeholder — only delete the entry on success
+	// to avoid losing the placeholder ID if the edit fails transiently.
+	if v, loaded := m.placeholders.Load(key); loaded {
 		if entry, ok := v.(placeholderEntry); ok && entry.id != "" {
 			if editor, ok := ch.(MessageEditor); ok {
 				if err := editor.EditMessage(ctx, msg.ChatID, entry.id, msg.Content); err == nil {
-					return true // edited successfully, skip Send
+					m.placeholders.Delete(key) // edit succeeded, clean up
+					return true
 				}
-				// edit failed → fall through to normal Send
+				// edit failed → fall through to normal Send, placeholder preserved for retry
 			}
 		}
+		// If we couldn't edit (no editor, empty ID), clean up the placeholder
+		m.placeholders.Delete(key)
 	}
 
 	return false

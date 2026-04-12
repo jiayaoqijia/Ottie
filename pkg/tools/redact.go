@@ -39,3 +39,20 @@ func RedactSensitive(s string) string {
 	}
 	return s
 }
+
+// RedactArgs returns a shallow copy of args with sensitive string
+// values redacted. Used for safe logging of tool arguments.
+func RedactArgs(args map[string]any) map[string]any {
+	if args == nil {
+		return nil
+	}
+	safe := make(map[string]any, len(args))
+	for k, v := range args {
+		if s, ok := v.(string); ok {
+			safe[k] = RedactSensitive(s)
+		} else {
+			safe[k] = v
+		}
+	}
+	return safe
+}

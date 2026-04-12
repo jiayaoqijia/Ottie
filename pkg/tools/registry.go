@@ -237,7 +237,7 @@ func (r *ToolRegistry) ExecuteWithContext(
 	logger.InfoCF("tool", "Tool execution started",
 		map[string]any{
 			"tool": name,
-			"args": args,
+			"args": RedactArgs(args),
 		})
 
 	r.mu.RLock()
