@@ -1844,8 +1844,24 @@ func (al *AgentLoop) forceCompression(agent *AgentInstance, sessionKey string) {
 		return
 	}
 
-	// Helper to find the mid-point of the conversation
+	// Find the mid-point of the conversation, then adjust it so we
+	// don't split a tool-call/tool-result pair. A split would leave
+	// the kept half with a dangling tool_call_id reference (tool
+	// result without its matching assistant tool-call message),
+	// which breaks the OpenAI/Anthropic message format.
 	mid := len(conversation) / 2
+
+	// Adjust mid forward if it would land between a tool-call
+	// (assistant with ToolCalls) and its result (role="tool").
+	// Walk forward until we're past any tool-result messages that
+	// belong to a tool-call we'd be dropping.
+	for mid < len(conversation) && conversation[mid].Role == "tool" {
+		mid++
+	}
+	// Safety: don't drop everything
+	if mid >= len(conversation) {
+		mid = len(conversation) / 2
+	}
 
 	// New history structure:
 	// 1. System Prompt (with compression note appended)

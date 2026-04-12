@@ -156,6 +156,12 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 }
 
 func (sl *SkillsLoader) LoadSkill(name string) (string, bool) {
+	// Reject names containing path separators or traversal components
+	// to prevent reading files outside the skills root directories.
+	if strings.Contains(name, "/") || strings.Contains(name, "\\") || strings.Contains(name, "..") {
+		return "", false
+	}
+
 	// Try flat lookup first for speed. Fall back to a recursive walk that
 	// supports category-nested layouts like workspace/skills/defi/lido-mcp/.
 	tryLoad := func(root string) (string, bool) {
