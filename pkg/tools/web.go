@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
+
 	"fmt"
 	"io"
 	"net"
@@ -893,17 +893,18 @@ func (t *WebFetchTool) Execute(ctx context.Context, args map[string]any) *ToolRe
 		return ErrorResult(fmt.Sprintf("request failed: %v", err))
 	}
 
-	resp.Body = http.MaxBytesReader(nil, resp.Body, t.fetchLimitBytes)
-
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	// Use io.LimitReader instead of http.MaxBytesReader — the latter
+	// requires a non-nil ResponseWriter (server-side API) and passing
+	// nil is undefined behavior that can panic in future Go versions.
+	// Read one extra byte to detect if the response exceeds the limit.
+	body, err := io.ReadAll(io.LimitReader(resp.Body, t.fetchLimitBytes+1))
 	if err != nil {
-		var maxBytesErr *http.MaxBytesError
-		if errors.As(err, &maxBytesErr) {
-			return ErrorResult(fmt.Sprintf("failed to read response: size exceeded %d bytes limit", t.fetchLimitBytes))
-		}
 		return ErrorResult(fmt.Sprintf("failed to read response: %v", err))
+	}
+	if int64(len(body)) > t.fetchLimitBytes {
+		return ErrorResult(fmt.Sprintf("failed to read response: size exceeded %d bytes limit", t.fetchLimitBytes))
 	}
 
 	contentType := resp.Header.Get("Content-Type")
