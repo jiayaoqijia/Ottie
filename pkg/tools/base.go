@@ -10,6 +10,93 @@ type Tool interface {
 	Execute(ctx context.Context, args map[string]any) *ToolResult
 }
 
+// EffectClass tags a tool with the blast-radius class of its
+// side effects. It is the string form of the five pkg/principal
+// capability markers. When a tool implements EffectClassifier and
+// returns a non-read-only class, the R11 agent-loop wiring wraps
+// its dispatch in a pkg/actionlog Prepare / Commit / Abort cycle
+// so a process crash between dispatch and result persistence can
+// be recovered on restart.
+//
+// Keeping the class as a string (not the pkg/principal type union)
+// lets pkg/tools avoid an import cycle back into pkg/principal —
+// the two systems converge at the ledger boundary where both
+// speak the same vocabulary.
+type EffectClass string
+
+const (
+	// EffectReadOnly is the default class for tools that do not
+	// implement EffectClassifier. Tools in this class do not get
+	// wrapped by the action ledger.
+	EffectReadOnly EffectClass = "read_only"
+
+	// EffectWritesLocal means the tool modifies workspace,
+	// filesystem, memory, or session state but nothing beyond
+	// the local agent instance.
+	EffectWritesLocal EffectClass = "writes_local"
+
+	// EffectWritesState means the tool modifies agent-internal
+	// state like the skill index, routing config, or registry
+	// — narrower than WritesLocal because it could change
+	// future agent behavior.
+	EffectWritesState EffectClass = "writes_state"
+
+	// EffectWritesChain means the tool submits state-changing
+	// operations to off-chain services that route through
+	// on-chain protocols (DEX quotes, cast posts, etc.).
+	EffectWritesChain EffectClass = "writes_chain"
+
+	// EffectWritesWallet means the tool can sign transactions
+	// with the user's private key. Highest-privilege class.
+	EffectWritesWallet EffectClass = "writes_wallet"
+)
+
+// IsSideEffecting reports whether a class warrants action-ledger
+// wrapping. Read-only tools are the majority of the tool set and
+// do not need Prepare/Commit rows.
+func (c EffectClass) IsSideEffecting() bool {
+	return c != "" && c != EffectReadOnly
+}
+
+// EffectClassifier is an optional interface tools can implement
+// to declare their effect class. Tools that do not implement it
+// are treated as read-only and bypass the action ledger.
+type EffectClassifier interface {
+	EffectClass() EffectClass
+}
+
+// ClassOf returns a tool's effect class via the optional
+// EffectClassifier interface, or EffectReadOnly if the tool does
+// not classify itself. Centralized here so the loop code has one
+// place to do the type assertion.
+//
+// Defends against a nil Tool interface AND a typed-nil concrete
+// tool whose EffectClass() method panics on a nil receiver: if
+// the input is nil, or the classifier's method would panic, we
+// return EffectReadOnly so the caller's dispatch path bypasses
+// the ledger. Codex R12 flagged the panic-on-typed-nil path as
+// a defensive-hardening gap.
+func ClassOf(t Tool) (cls EffectClass) {
+	if t == nil {
+		return EffectReadOnly
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			// Typed-nil classifier or any other panic — fall
+			// back to read-only so the dispatch path never
+			// crashes on a broken tool.
+			cls = EffectReadOnly
+		}
+	}()
+	if ec, ok := t.(EffectClassifier); ok {
+		class := ec.EffectClass()
+		if class != "" {
+			return class
+		}
+	}
+	return EffectReadOnly
+}
+
 // --- Request-scoped tool context (channel / chatID) ---
 //
 // Carried via context.Value so that concurrent tool calls each receive

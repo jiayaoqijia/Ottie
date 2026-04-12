@@ -1645,14 +1645,58 @@ func (al *AgentLoop) runLLMIteration(
 					})
 				}
 
-				toolResult := agent.Tools.ExecuteWithContext(
-					ctx,
-					tc.Name,
-					tc.Arguments,
-					opts.Channel,
-					opts.ChatID,
-					asyncCallback,
-				)
+				// Run tool dispatch through the R12 ACS ledger
+				// wrapper. When ACS is off or the tool does not
+				// declare a side-effecting class, Dispatch falls
+				// through to the registry's ExecuteWithContext
+				// directly and produces zero ledger rows.
+				runTool := func(ctx context.Context) *tools.ToolResult {
+					return agent.Tools.ExecuteWithContext(
+						ctx,
+						tc.Name,
+						tc.Arguments,
+						opts.Channel,
+						opts.ChatID,
+						asyncCallback,
+					)
+				}
+				var toolResult *tools.ToolResult
+				if al.acs != nil && acsTraceID != "" {
+					// Look up the tool to classify its effect; if
+					// the tool isn't registered under that name,
+					// fall through to the direct path and let the
+					// registry's own "unknown tool" error surface.
+					var toolObj tools.Tool
+					if t, ok := agent.Tools.Get(tc.Name); ok {
+						toolObj = t
+					}
+					if toolObj != nil {
+						dr := al.acs.Dispatch(ctx, acs.DispatchRequest{
+							TraceID:   acsTraceID,
+							Tool:      toolObj,
+							Args:      tc.Arguments,
+							Principal: acsPrincipalLabel(agent.ID, opts.Channel, opts.ChatID),
+						}, runTool)
+						toolResult = dr.Result
+						// Codex R12: surface ledger finalization
+						// failures to the operator log. A silent
+						// commit/abort miss would hide ledger-
+						// reality drift.
+						if dr.FinalizeErr != nil {
+							logger.WarnCF("agent", "ACS tool-dispatch finalize failed",
+								map[string]any{
+									"tool":      tc.Name,
+									"intent_id": dr.IntentID,
+									"trace_id":  acsTraceID,
+									"error":     dr.FinalizeErr.Error(),
+								})
+						}
+					} else {
+						toolResult = runTool(ctx)
+					}
+				} else {
+					toolResult = runTool(ctx)
+				}
 				agentResults[idx].result = toolResult
 			}(i, tc)
 		}
@@ -2358,6 +2402,29 @@ func (al *AgentLoop) beginACSTurn(
 		return ""
 	}
 	return traceID
+}
+
+// acsPrincipalLabel produces a stand-in principal label string
+// for a tool dispatch until pkg/principal is threaded into the
+// runtime tool registry. Matches pkg/principal.Label() format
+// so downstream audits can parse the column with one regex.
+// Codex R12 caught that the previous version hardcoded
+// `agent=main`, which would mis-attribute every side-effecting
+// tool in a multi-agent deployment — fixed by taking agent.ID
+// as a parameter. Once the full PrincipalContext plumbing
+// lands, this helper should go away and the typed principal
+// should flow through instead.
+func acsPrincipalLabel(agentID, channel, chatID string) string {
+	if agentID == "" {
+		agentID = "unknown"
+	}
+	if channel == "" {
+		channel = "unknown"
+	}
+	if chatID == "" {
+		chatID = "unknown"
+	}
+	return "agent=" + agentID + ";user=unknown;account=unknown;channel=" + channel + ":" + chatID
 }
 
 // allocateACSTurnNumber returns a monotonic per-session turn
