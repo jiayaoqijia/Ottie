@@ -3,7 +3,7 @@
   <img src="docs/ottie_banner.jpg" alt="Ottie Banner" width="100%">
 
   <h1>Ottie</h1>
-  <h3>Self-Evolving AI Agent with Deterministic Replay</h3>
+  <h3>The agent runtime that proves what it did.</h3>
 
   <p>
     <a href="https://ottie.xyz"><img src="https://img.shields.io/badge/website-ottie.xyz-blue?style=flat" alt="Website"></a>
@@ -17,24 +17,35 @@
 
 ---
 
-Ottie is a self-evolving AI agent that learns from tasks, packages approaches as reusable skills, and makes every side-effecting action auditable and recoverable. Written in pure Go with a single binary, 28 skills in 7 domain categories, a write-ahead action ledger for deterministic turn replay, typed compile-time principal authorization, multi-agent swarms, and 13+ messaging channels. Ottie's self-evolving harness is domain-agnostic; the current skill set focuses on blockchain/DeFi with verified on-chain presence via ERC-8004, but the same replay + ledger infrastructure applies to any high-stakes domain where "what happened and why?" matters.
+Ottie is the only AI agent where every decision has a receipt. A self-evolving agent runtime that learns from tasks, makes every side-effecting action auditable and crash-recoverable, and enforces authorization at compile time — not at 3am in production. One Go binary. 28 skills. Zero dependencies.
 
 **[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Demo Videos](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)** · **[8004scan Profile](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111)**
 
+## Why Ottie?
+
+No other agent combines these five properties. Most have zero.
+
+| Property | What it means | Closest competitor |
+|-|-|-|
+| **Deterministic replay** | Per-turn execution manifest with prompt hash, tool schema hash, and provider request IDs. Any decision can be reconstructed bit-for-bit. | LangGraph checkpoints (coarser, no cryptographic pinning) |
+| **Write-ahead action ledger** | Every side-effecting tool dispatch wrapped in Prepare/Commit/Abort rows. Crash between dispatch and result? Recovery at startup. | None. No agent ships database-style transactional guarantees. |
+| **Compile-time authorization** | Go phantom-typed `PrincipalContext[C Capability]` — unauthorized wallet writes are rejected by `go build`, not a runtime check. | Arcade AI (OAuth, runtime only). Impossible in Python/TS. |
+| **Self-evolving skills** | Learns from tasks, packages as reusable skills, human-consented review before activation. Gets smarter every day — but only with your approval. | Hermes Agent (learning loop, but no ledger/replay/auth triad) |
+| **Single Go binary** | ~24 MB, zero CGO, sub-second startup. No Python, no virtualenv, no Docker required. Air-gapped and edge-deployable. | No complete agent ships as one static binary with 28 skills. |
+
 ## Features
 
-- **Self-evolving skills** — learns from tasks and packages approaches as reusable skills; autonomous skill creation with human-consented review
-- **Write-ahead action ledger** — every side-effecting tool dispatch is wrapped in Prepare/Commit/Abort rows so a crash between dispatch and result is recoverable on restart; orphaned intents surface at startup for reconciliation
-- **Deterministic turn replay** — per-turn execution manifest captures prompt hash, tool schema hash, provider request IDs, and model ID so any decision can be reconstructed bit-for-bit from the ledger
-- **Typed principal authorization** — phantom-typed `PrincipalContext[C Capability]` with Go generics makes unauthorized high-privilege tool calls a compile-time type error, not a runtime check
-- **28 skills in 7 domain categories** — `crypto/` (wallets, CEX, research), `defi/` (swap, lending, staking, yield, Lido MCP), `identity/` (ERC-8004, Self Agent ID), `payments/` (Tempo, MPP), `safety/` (ClawWall, prompt injection guard), `research/` (Polymarket, Farcaster), `meta/` (skill management)
-- **On-chain verified** — [ERC-8004 Agent #1988](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111), deployed contracts, real Uniswap swaps on Sepolia
-- **Autonomous execution** — discover → plan → execute → verify → report pipeline
+- **Self-evolving skills** — learns from tasks, packages approaches as reusable skills with human-consented review; 28 skills across 7 domain categories
+- **Auditable replay** — per-turn execution manifest captures prompt hash, tool schema hash, provider request IDs, and model ID; every LLM call including retries and fallback attempts is recorded
+- **Crash-proof actions** — write-ahead action ledger with Prepare/Commit/Abort for every side-effecting tool; orphaned intents surface at startup for reconciliation
+- **Compiler-verified safety** — phantom-typed `PrincipalContext[C Capability]` with Go generics; unauthorized high-privilege tool calls fail at `go build`, not in production
+- **28 skills in 7 categories** — `crypto/` (wallets, CEX, research), `defi/` (swap, lending, staking, yield, Lido MCP), `identity/` (ERC-8004, Self Agent ID), `payments/` (Tempo, MPP), `safety/` (ClawWall, prompt injection guard), `research/` (Polymarket, Farcaster), `meta/` (skill management)
+- **14-reason error classifier** — typed `FailoverReason` with recovery hints (ShouldCompress, ShouldFallback, ShouldRotateCredential) driving the fallback chain
 - **13+ channels** — Telegram, Discord, Slack, Signal, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, IRC
-- **Super light** — single Go binary (~24 MB), zero CGO, sub-second startup
-- **Multi-agent swarm** — sub-agent spawning via unified `delegate` tool, multi-bot Telegram coordination
+- **One binary, zero deps** — single Go binary (~24 MB), zero CGO, sub-second startup, air-gapped deployable
+- **Multi-agent swarm** — sub-agent spawning via unified `delegate` tool, multi-bot coordination
+- **On-chain verified** — [ERC-8004 Agent #1988](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111), deployed contracts, real Uniswap swaps on Sepolia
 - **Privacy layer** — Venice AI zero-retention inference, Railgun ZK-SNARK private transfers
-- **Error recovery** — centralized 14-reason error classifier with typed `FailoverReason` + 4 recovery-hint methods, fallback chain with ShouldCompress/ShouldFallback/ShouldRotateCredential signals
 
 ## On-Chain Artifacts
 
