@@ -3,7 +3,7 @@
   <img src="docs/ottie_banner.jpg" alt="Ottie Banner" width="100%">
 
   <h1>Ottie</h1>
-  <h3>Self-Evolving Agent for Ethereum and Crypto</h3>
+  <h3>Self-Evolving AI Agent with Deterministic Replay</h3>
 
   <p>
     <a href="https://ottie.xyz"><img src="https://img.shields.io/badge/website-ottie.xyz-blue?style=flat" alt="Website"></a>
@@ -17,22 +17,24 @@
 
 ---
 
-Ottie is a purpose-built AI agent for Ethereum and crypto, written in pure Go. Single binary, 36 blockchain-native skills, multi-agent swarms, 13+ messaging channels, and verified on-chain presence via ERC-8004. Where general-purpose agents bolt on wallet plugins, Ottie treats every interaction as if it might involve real money — with real on-chain transactions, deployed contracts, and verifiable execution logs.
+Ottie is a self-evolving AI agent that learns from tasks, packages approaches as reusable skills, and makes every side-effecting action auditable and recoverable. Written in pure Go with a single binary, 28 skills in 7 domain categories, a write-ahead action ledger for deterministic turn replay, typed compile-time principal authorization, multi-agent swarms, and 13+ messaging channels. Ottie's self-evolving harness is domain-agnostic; the current skill set focuses on blockchain/DeFi with verified on-chain presence via ERC-8004, but the same replay + ledger infrastructure applies to any high-stakes domain where "what happened and why?" matters.
 
 **[Website](https://ottie.xyz)** · **[One-Click Launch](https://claw.altllm.ai/)** · **[Demo Videos](https://drive.google.com/drive/folders/137-dvzsrpH6FjilDD7hjby519rIEnTZc?usp=drive_link)** · **[8004scan Profile](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111)**
 
 ## Features
 
-- **Self-evolving skills** — learns from tasks and packages approaches as reusable skills
-- **36 blockchain-native skills** — wallets, swaps, lending, staking, yield, CEX data, research, Lido MCP, vault monitoring, privacy, identity, treasury, payments
+- **Self-evolving skills** — learns from tasks and packages approaches as reusable skills; autonomous skill creation with human-consented review
+- **Write-ahead action ledger** — every side-effecting tool dispatch is wrapped in Prepare/Commit/Abort rows so a crash between dispatch and result is recoverable on restart; orphaned intents surface at startup for reconciliation
+- **Deterministic turn replay** — per-turn execution manifest captures prompt hash, tool schema hash, provider request IDs, and model ID so any decision can be reconstructed bit-for-bit from the ledger
+- **Typed principal authorization** — phantom-typed `PrincipalContext[C Capability]` with Go generics makes unauthorized high-privilege tool calls a compile-time type error, not a runtime check
+- **28 skills in 7 domain categories** — `crypto/` (wallets, CEX, research), `defi/` (swap, lending, staking, yield, Lido MCP), `identity/` (ERC-8004, Self Agent ID), `payments/` (Tempo, MPP), `safety/` (ClawWall, prompt injection guard), `research/` (Polymarket, Farcaster), `meta/` (skill management)
 - **On-chain verified** — [ERC-8004 Agent #1988](https://www.8004scan.io/api/v1/public/agents?q=Ottie&chainId=11155111), deployed contracts, real Uniswap swaps on Sepolia
-- **Lido MCP Server** — 14 tools: stake, wrap, unwrap, withdraw, balance, APR, governance, vault health — all with `dry_run`
 - **Autonomous execution** — discover → plan → execute → verify → report pipeline
-- **Privacy layer** — Venice AI zero-retention inference, Railgun ZK-SNARK private transfers
-- **Agent identity** — ERC-8004 on-chain identity, Self Protocol ZK proof-of-human
 - **13+ channels** — Telegram, Discord, Slack, Signal, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, IRC
-- **Super light** — single Go binary (<10MB), zero CGO, sub-second startup
-- **Multi-agent swarm** — sub-agent spawning and multi-bot Telegram coordination
+- **Super light** — single Go binary (~24 MB), zero CGO, sub-second startup
+- **Multi-agent swarm** — sub-agent spawning via unified `delegate` tool, multi-bot Telegram coordination
+- **Privacy layer** — Venice AI zero-retention inference, Railgun ZK-SNARK private transfers
+- **Error recovery** — centralized 14-reason error classifier with typed `FailoverReason` + 4 recovery-hint methods, fallback chain with ShouldCompress/ShouldFallback/ShouldRotateCredential signals
 
 ## On-Chain Artifacts
 
