@@ -39,6 +39,8 @@ func (t *InstallSkillTool) Name() string {
 	return "install_skill"
 }
 
+func (t *InstallSkillTool) EffectClass() EffectClass { return EffectWritesState }
+
 func (t *InstallSkillTool) Description() string {
 	return "Install a skill from a registry by slug. Downloads and extracts the skill into the workspace. Use find_skills first to discover available skills."
 }

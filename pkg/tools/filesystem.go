@@ -338,6 +338,8 @@ func (t *WriteFileTool) Name() string {
 	return "write_file"
 }
 
+func (t *WriteFileTool) EffectClass() EffectClass { return EffectWritesLocal }
+
 func (t *WriteFileTool) Description() string {
 	return "Write content to a file"
 }

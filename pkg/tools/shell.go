@@ -164,6 +164,8 @@ func (t *ExecTool) Name() string {
 	return "exec"
 }
 
+func (t *ExecTool) EffectClass() EffectClass { return EffectWritesLocal }
+
 func (t *ExecTool) Description() string {
 	return "Execute a shell command and return its output. Use with caution."
 }

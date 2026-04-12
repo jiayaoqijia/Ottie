@@ -28,6 +28,8 @@ func (t *EditFileTool) Name() string {
 	return "edit_file"
 }
 
+func (t *EditFileTool) EffectClass() EffectClass { return EffectWritesLocal }
+
 func (t *EditFileTool) Description() string {
 	return "Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file."
 }
@@ -90,6 +92,8 @@ func NewAppendFileTool(workspace string, restrict bool, allowPaths ...[]*regexp.
 func (t *AppendFileTool) Name() string {
 	return "append_file"
 }
+
+func (t *AppendFileTool) EffectClass() EffectClass { return EffectWritesLocal }
 
 func (t *AppendFileTool) Description() string {
 	return "Append content to the end of a file"
