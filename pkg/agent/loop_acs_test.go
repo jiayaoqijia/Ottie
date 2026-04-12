@@ -609,20 +609,16 @@ func TestForceCompressionDoesNotOrphanToolResultMessages(t *testing.T) {
 	}
 
 	// Every tool-result must have a matching tool-call.
-	// KNOWN DEFECT: forceCompression splits tool-call/tool-result pairs
-	// when the midpoint falls between them. This test documents the bug.
-	// When the fix lands (pair-aware midpoint adjustment), these will stop
-	// firing and the test confirms the fix.
 	for resultID := range toolResultIDs {
 		if !toolCallIDs[resultID] {
-			t.Logf("KNOWN DEFECT: tool-result %q has no matching tool-call in compressed history — pair was orphaned by compression", resultID)
+			t.Errorf("tool-result %q has no matching tool-call in compressed history — pair was orphaned by compression", resultID)
 		}
 	}
 
 	// Every tool-call should have a matching tool-result (or be dropped entirely)
 	for callID := range toolCallIDs {
 		if !toolResultIDs[callID] {
-			t.Logf("KNOWN DEFECT: tool-call %q has no matching tool-result in compressed history — pair was split by compression", callID)
+			t.Errorf("tool-call %q has no matching tool-result in compressed history — pair was split by compression", callID)
 		}
 	}
 

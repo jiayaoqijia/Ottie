@@ -1849,18 +1849,32 @@ func (al *AgentLoop) forceCompression(agent *AgentInstance, sessionKey string) {
 	// the kept half with a dangling tool_call_id reference (tool
 	// result without its matching assistant tool-call message),
 	// which breaks the OpenAI/Anthropic message format.
+	//
+	// Two cases to guard against:
+	// (a) mid lands ON a tool-result → the tool-call before it is dropped
+	// (b) mid lands right AFTER a tool-call → the tool-results after it are kept orphaned
 	mid := len(conversation) / 2
 
-	// Adjust mid forward if it would land between a tool-call
-	// (assistant with ToolCalls) and its result (role="tool").
-	// Walk forward until we're past any tool-result messages that
-	// belong to a tool-call we'd be dropping.
+	// Case (a): walk forward past any tool-result messages so we
+	// don't keep a result without its call.
 	for mid < len(conversation) && conversation[mid].Role == "tool" {
 		mid++
 	}
-	// Safety: don't drop everything
-	if mid >= len(conversation) {
+	// Case (b): if the last dropped message (mid-1) is an assistant
+	// with tool calls, include it in the kept set by stepping back.
+	if mid > 0 && mid < len(conversation) &&
+		conversation[mid-1].Role == "assistant" && len(conversation[mid-1].ToolCalls) > 0 {
+		mid--
+	}
+	// Safety: don't drop everything — keep at least 2 messages
+	if mid >= len(conversation)-1 {
+		// Find the first safe split point (not inside a tool pair)
 		mid = len(conversation) / 2
+		// Walk backward to find a clean boundary
+		for mid > 1 && (conversation[mid].Role == "tool" ||
+			(conversation[mid-1].Role == "assistant" && len(conversation[mid-1].ToolCalls) > 0)) {
+			mid--
+		}
 	}
 
 	// New history structure:
