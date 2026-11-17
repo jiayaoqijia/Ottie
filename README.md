@@ -135,7 +135,7 @@ Deployed on Sepolia: [0xc4EB945689E0A13832004a44C0A3292a33E2Fec0](https://sepoli
 | | `crypto-cex` | Order books, funding rates, tickers across 6 exchanges | Binance, Coinbase, Kraken, Bybit, Gate.io, Bitget |
 | | `crypto-research` | Contract verification, perps, governance | Etherscan, Hyperliquid, Snapshot |
 | **On-Chain Operations** | `crypto-wallet` | Balances, holdings, tx history, approvals, ENS | Public RPCs, Etherscan |
-| | `defi-swap` | DEX swap quotes, price routing, slippage | Uniswap, ParaSwap, Jupiter, 1inch |
+| | `defi-swap` | DEX swap quotes, price routing, slippage | Uniswap, ParaSwap, Jupiter, 1inch, LCX Liberty DEX |
 | **Yield & Risk** | `defi-lending` | Lending rates, APY, health factors | Aave, Morpho, Compound, DefiLlama |
 | | `defi-staking` | Liquid staking APR, exchange rates | Lido, Rocket Pool, DefiLlama |
 | | `defi-yield` | Yield farming, APY comparison | DefiLlama, Pendle, Curve |
